@@ -1,0 +1,175 @@
+{
+  "code": 200,
+  "message": "success",
+  "data": [
+    {
+      "id": "BJ1851561547923456000",
+      "housePicture": "http://127.0.0.1:6060/public/room6.jpg",
+      "tags": [
+        {
+          "name": "官方核验"
+        },
+        {
+          "name": "业主自荐"
+        },
+        {
+          "name": "精装"
+        },
+        {
+          "name": "集中供暖"
+        }
+      ],
+      "houseTitle": "整租·青荷里宸欣园 2室1厅 南",
+      "address": "朝阳·豆各庄",
+      "rentPriceUnit": "元/月",
+      "rentPriceListing": "5200",
+      "rentArea": "81.24"
+    },
+    {
+      "id": "BJ1790739553091321856",
+      "housePicture": "http://127.0.0.1:6060/public/room65.jpg",
+      "tags": [
+        {
+          "name": "官方核验"
+        },
+        {
+          "name": "精装"
+        },
+        {
+          "name": "集中供暖"
+        }
+      ],
+      "houseTitle": "整租·金科天玺 7室3厅 复式 南",
+      "address": "昌平·小汤山",
+      "rentPriceUnit": "元/月",
+      "rentPriceListing": "35000",
+      "rentArea": "387.04"
+    },
+    {
+      "id": "BJ1845316833150763008",
+      "housePicture": "http://127.0.0.1:6060/public/room31.jpg",
+      "tags": [
+        {
+          "name": "官方核验"
+        },
+        {
+          "name": "集中供暖"
+        },
+        {
+          "name": "随时看房"
+        }
+      ],
+      "houseTitle": "整租·玉桥南里 3室1厅 南/北",
+      "address": "通州·玉桥",
+      "rentPriceUnit": "元/月",
+      "rentPriceListing": "3800",
+      "rentArea": "93.89"
+    },
+    {
+      "id": "BJ1804907511392763904",
+      "housePicture": "http://127.0.0.1:6060/public/room37.jpg",
+      "tags": [
+        {
+          "name": "精装"
+        },
+        {
+          "name": "集中供暖"
+        },
+        {
+          "name": "押一付一"
+        },
+        {
+          "name": "随时看房"
+        }
+      ],
+      "houseTitle": "整租·青年湖东里 2室1厅 南",
+      "address": "东城·安定门",
+      "rentPriceUnit": "元/月",
+      "rentPriceListing": "7360",
+      "rentArea": "55.42"
+    },
+    {
+      "id": "BJ1787804751295938560",
+      "housePicture": "http://127.0.0.1:6060/public/room68.jpg",
+      "tags": [
+        {
+          "name": "官方核验"
+        },
+        {
+          "name": "集中供暖"
+        },
+        {
+          "name": "随时看房"
+        }
+      ],
+      "houseTitle": "整租·双柳巷 2室1厅 南",
+      "address": "朝阳·双桥",
+      "rentPriceUnit": "元/月",
+      "rentPriceListing": "3700",
+      "rentArea": "50.73"
+    },
+    {
+      "id": "BJ1777931992164204544",
+      "housePicture": "http://127.0.0.1:6060/public/room24.jpg",
+      "tags": [
+        {
+          "name": "官方核验"
+        },
+        {
+          "name": "近地铁"
+        },
+        {
+          "name": "精装"
+        },
+        {
+          "name": "集中供暖"
+        }
+      ],
+      "houseTitle": "整租·安苑北里 2室1厅 南/北",
+      "address": "朝阳·亚运村",
+      "rentPriceUnit": "元/月",
+      "rentPriceListing": "7300",
+      "rentArea": "57.00"
+    },
+    {
+      "id": "BJ1824772441570803712",
+      "housePicture": "http://127.0.0.1:6060/public/room78.jpg",
+      "tags": [
+        {
+          "name": "精装"
+        },
+        {
+          "name": "押一付一"
+        },
+        {
+          "name": "随时看房"
+        }
+      ],
+      "houseTitle": "整租·友谊嘉园二期 2室1厅 南",
+      "address": "海淀·海淀北部新区",
+      "rentPriceUnit": "元/月",
+      "rentPriceListing": "6890",
+      "rentArea": "83.36"
+    },
+    {
+      "id": "BJ1805222731805884416",
+      "housePicture": "http://127.0.0.1:6060/public/room7.jpg",
+      "tags": [
+        {
+          "name": "官方核验"
+        },
+        {
+          "name": "近地铁"
+        },
+        {
+          "name": "集中供暖"
+        }
+      ],
+      "houseTitle": "整租·枣园尚城南区 1室1厅 南",
+      "address": "大兴·枣园",
+      "rentPriceUnit": "元/月",
+      "rentPriceListing": "3900",
+      "rentArea": "62.00"
+    }
+  ]
+}

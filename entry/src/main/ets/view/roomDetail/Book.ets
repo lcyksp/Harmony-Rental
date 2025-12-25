@@ -1,0 +1,279 @@
+// entry/src/main/ets/view/roomDetail/Book.ets
+import { reservationApi } from '../../api/book';
+import { YuDing } from './YuDing';
+import { promptAction, router } from '@kit.ArkUI';
+import { rvp } from '../../common/utils/DeviceScreen';
+import { ReserveRoomParams } from '../../viewmodel/BookRoomModel';
+import { getUserHouses, UserHouse, setHouseRented } from '../../store/UserHouseStore';
+
+// ⭐ 新增：引入下单接口
+import { CreateOrderPayload, createRoomOrderApi } from '../../api/room';
+
+@Component
+export struct Book {
+  @StorageProp('bottomRectHeight')
+  bottomRectHeight: number = 0
+
+  @StorageProp('token')
+  token: string = ''
+
+  // 房源 ID
+  @Prop houseId: string
+
+  // 是否本地发布的房源 + 是否已租
+  @State isUserHouse: boolean = false
+  @State isRented: boolean = false
+
+  // ⭐ 新增：填写“住房个人信息”用到的状态
+  @State baseName: string = ''
+  @State basePhone: string = ''
+  @State baseRemark: string = ''
+  @State baseSubmitting: boolean = false
+
+  aboutToAppear() {
+    // 判断 houseId 是否属于本地发布的房源
+    const list: UserHouse[] = getUserHouses()
+    for (let i = 0; i < list.length; i++) {
+      if (list[i].id.toString() === this.houseId) {
+        this.isUserHouse = true
+        this.isRented = list[i].isRented
+        break
+      }
+    }
+  }
+
+  // 原有预约弹窗（保留）
+  yuDingController: CustomDialogController = new CustomDialogController({
+    builder: YuDing({
+      confirm: (param: ReserveRoomParams) => {
+        param.houseId = this.houseId
+
+        if (this.isUserHouse) {
+          // 本地房源逻辑：永远预约成功
+          setHouseRented(Number.parseInt(this.houseId), true)
+          this.isRented = true
+          promptAction.showToast({ message: '预约成功！房源已被标记为已租' })
+          return
+        }
+
+        // 后端房源逻辑（原有）
+        reservationApi(param).catch(() => {
+          promptAction.showToast({ message: '预约失败，时间冲突' })
+        })
+      }
+    }),
+    alignment: DialogAlignment.Bottom,
+    autoCancel: true,
+    customStyle: true,
+    isModal: true,
+    maskColor: 'rgba(0,0,0,0.7)',
+  })
+
+  // ⭐ 新增：填写入住基本信息的弹窗
+  baseInfoController: CustomDialogController = new CustomDialogController({
+    builder: () => {
+      this.buildBaseInfoDialog()
+    },
+    alignment: DialogAlignment.Bottom,
+    autoCancel: true,
+    customStyle: true,
+    isModal: true,
+    maskColor: 'rgba(0,0,0,0.7)',
+  })
+
+  /**
+   * “立即预定”逻辑（保留）
+   */
+  private handleBookNow() {
+    // 本地房源已租：按钮不可继续预约
+    if (this.isUserHouse && this.isRented) {
+      promptAction.showToast({ message: '该房源已被租出' })
+      return
+    }
+
+    // 未登录 → 要求登录
+    if (!this.token) {
+      router.pushUrl({
+        url: 'pages/login/LoginPhone',
+        params: {
+          redirectUrl: 'pages/rentRoom/RoomDetail',
+          redirectParams: { id: this.houseId }
+        }
+      })
+      return
+    }
+
+    // 登录后弹出预约时间弹窗
+    this.yuDingController.open()
+  }
+
+  /**
+   * 提交“住房基本信息” → 调 /rooms/:id/orders
+   */
+  private submitBaseInfo() {
+    const phoneTrim: string = this.basePhone.trim()
+    const nameTrim: string = this.baseName.trim()
+
+    if (!phoneTrim) {
+      promptAction.showToast({ message: '请输入手机号' })
+      return
+    }
+
+    if (!this.houseId) {
+      // 理论上不会发生，只是兜底
+      promptAction.showToast({ message: '房源信息缺失，无法提交' })
+      return
+    }
+
+    const payload: CreateOrderPayload = new CreateOrderPayload()
+    payload.tenantId = phoneTrim             // 直接用手机号作为租客唯一标识
+    payload.tenantName = nameTrim || '租客'
+    payload.tenantPhone = phoneTrim
+    payload.remark = this.baseRemark.trim()
+
+    this.baseSubmitting = true
+
+    createRoomOrderApi(this.houseId, payload)
+      .then(() => {
+        promptAction.showToast({ message: '信息已提交，等待房东确认' })
+        // 提交成功后收起弹窗并清空表单
+        this.baseInfoController.close()
+        this.baseRemark = ''
+      })
+      .catch(() => {
+        promptAction.showToast({ message: '提交失败，请稍后重试' })
+      })
+      .then(() => {
+        this.baseSubmitting = false
+      })
+  }
+
+  /**
+   * “就要这间了”点击逻辑：
+   *  - 先要求登录
+   *  - 再弹出“填写基本信息”的弹窗
+   */
+  private handleGoVisit() {
+    if (!this.token) {
+      router.pushUrl({
+        url: 'pages/login/LoginPhone',
+        params: {
+          redirectUrl: 'pages/rentRoom/RoomDetail',
+          redirectParams: { id: this.houseId }
+        }
+      })
+      return
+    }
+
+    this.baseInfoController.open()
+  }
+
+  /**
+   * ⭐ 弹出的“住房基本信息”对话框 UI
+   */
+  @Builder
+  private buildBaseInfoDialog() {
+    Column() {
+      Column({ space: rvp(8) }) {
+        Text('填写入住人基本信息')
+          .fontSize(18)
+          .fontWeight(FontWeight.Medium)
+          .margin({ bottom: rvp(8) })
+
+        // 姓名
+        TextInput({ text: this.baseName, placeholder: '姓名（选填）' })
+          .height(rvp(36))
+          .fontSize(14)
+          .onChange((value: string) => {
+            this.baseName = value
+          })
+
+        // 手机号
+        TextInput({ text: this.basePhone, placeholder: '手机号（必填）' })
+          .type(InputType.PhoneNumber)
+          .height(rvp(36))
+          .fontSize(14)
+          .onChange((value: string) => {
+            this.basePhone = value
+          })
+
+        // 备注
+        TextInput({ text: this.baseRemark, placeholder: '备注（可写入住人数、作息等）' })
+          .height(rvp(36))
+          .fontSize(14)
+          .onChange((value: string) => {
+            this.baseRemark = value
+          })
+      }
+
+      Row() {
+        Button('取消', { type: ButtonType.Normal })
+          .borderRadius(rvp(4))
+          .backgroundColor('#F5F5F5')
+          .fontColor('#666666')
+          .height(rvp(36))
+          .layoutWeight(1)
+          .onClick(() => {
+            this.baseInfoController.close()
+          })
+
+        Button(this.baseSubmitting ? '提交中...' : '提交', { type: ButtonType.Normal })
+          .borderRadius(rvp(4))
+          .backgroundColor('#24A17B')
+          .fontColor('#FFFFFF')
+          .height(rvp(36))
+          .layoutWeight(1)
+          .margin({ left: rvp(12) })
+          .enabled(!this.baseSubmitting)
+          .onClick(() => {
+            if (!this.baseSubmitting) {
+              this.submitBaseInfo()
+            }
+          })
+      }
+      .margin({ top: rvp(16) })
+    }
+    .backgroundColor($r('app.color.white'))
+    .padding({ left: rvp(16), right: rvp(16), top: rvp(16), bottom: rvp(16) })
+    .width('100%')
+    .borderRadius({ topLeft: rvp(12), topRight: rvp(12) })
+  }
+
+  build() {
+    Row() {
+      Column({ space: rvp(4) }) {
+        Image($r('app.media.my_icon_1')).width(rvp(18))
+        Text('99+').fontSize(12).fontColor($r('app.color.gray'))
+      }
+
+      Column({ space: rvp(4) }) {
+        Image($r('app.media.message')).width(rvp(18)).fillColor($r('app.color.black'))
+        Text('咨询').fontSize(12).fontColor($r('app.color.gray'))
+      }
+
+      // “立即预定”按钮（原逻辑，带已租状态）
+      Button(this.isRented ? '已租出' : '立即预定', { type: ButtonType.Normal })
+        .borderRadius(rvp(2))
+        .backgroundColor(this.isRented ? '#cccccc' : '#24A17B')
+        .padding({ left: rvp(30), right: rvp(30) })
+        .height(rvp(34))
+        .onClick(() => {
+          if (!this.isRented) {
+            this.handleBookNow()
+          }
+        })
+
+      // ⭐ 改造后的“就要这间了”：弹出填写基本信息
+      Button('就要这间了', { type: ButtonType.Normal })
+        .borderRadius(rvp(2))
+        .backgroundColor('#6BE3BE')
+        .padding({ left: rvp(30), right: rvp(30) })
+        .height(rvp(34))
+        .onClick(() => this.handleGoVisit())
+    }
+    .backgroundColor($r('app.color.white'))
+    .padding({ bottom: this.bottomRectHeight })
+    .justifyContent(FlexAlign.SpaceEvenly)
+    .width('100%')
+  }
+}
