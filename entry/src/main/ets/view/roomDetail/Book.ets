@@ -6,8 +6,11 @@ import { rvp } from '../../common/utils/DeviceScreen';
 import { ReserveRoomParams } from '../../viewmodel/BookRoomModel';
 import { getUserHouses, UserHouse, setHouseRented } from '../../store/UserHouseStore';
 
-// ⭐ 新增：引入下单接口
+// 下单接口
 import { CreateOrderPayload, createRoomOrderApi } from '../../api/room';
+
+// ⭐ 想看 store
+import { isInWantSee, toggleWantSee } from '../../store/WantSeeStore';
 
 @Component
 export struct Book {
@@ -20,11 +23,20 @@ export struct Book {
   // 房源 ID
   @Prop houseId: string
 
+  // ⭐ 新增：房源标题、封面、价格文案、位置文案
+  @Prop title: string = ''
+  @Prop cover: string = ''
+  @Prop priceText: string = ''
+  @Prop location: string = ''
+
   // 是否本地发布的房源 + 是否已租
   @State isUserHouse: boolean = false
   @State isRented: boolean = false
 
-  // ⭐ 新增：填写“住房个人信息”用到的状态
+  // 当前房源是否在「想看」
+  @State isWantSee: boolean = false
+
+  // 填写“住房个人信息”用到的状态
   @State baseName: string = ''
   @State basePhone: string = ''
   @State baseRemark: string = ''
@@ -40,7 +52,28 @@ export struct Book {
         break
       }
     }
+
+    // ⭐ 根据 store 初始化当前房源是否已想看
+    this.isWantSee = isInWantSee(this.houseId)
   }
+
+  // ⭐ 切换「想看」状态：更新 Store + 本地状态
+  private handleToggleWantSee(): void {
+    const now: boolean = toggleWantSee(this.houseId, {
+      title: this.title,
+      cover: this.cover,
+      priceText: this.priceText,
+      location: this.location
+    })
+
+    this.isWantSee = now
+
+    promptAction.showToast({
+      message: now ? '已加入「想看」' : '已取消「想看」',
+      duration: 2000
+    })
+  }
+
 
   // 原有预约弹窗（保留）
   yuDingController: CustomDialogController = new CustomDialogController({
@@ -69,7 +102,7 @@ export struct Book {
     maskColor: 'rgba(0,0,0,0.7)',
   })
 
-  // ⭐ 新增：填写入住基本信息的弹窗
+  // 填写入住基本信息的弹窗
   baseInfoController: CustomDialogController = new CustomDialogController({
     builder: () => {
       this.buildBaseInfoDialog()
@@ -82,7 +115,7 @@ export struct Book {
   })
 
   /**
-   * “立即预定”逻辑（保留）
+   * “立即预定”逻辑
    */
   private handleBookNow() {
     // 本地房源已租：按钮不可继续预约
@@ -169,7 +202,7 @@ export struct Book {
   }
 
   /**
-   * ⭐ 弹出的“住房基本信息”对话框 UI
+   * 弹出的“住房基本信息”对话框 UI
    */
   @Builder
   private buildBaseInfoDialog() {
@@ -241,10 +274,18 @@ export struct Book {
 
   build() {
     Row() {
-      Column({ space: rvp(4) }) {
-        Image($r('app.media.my_icon_1')).width(rvp(18))
-        Text('99+').fontSize(12).fontColor($r('app.color.gray'))
+      // ⭐ 左下角：爱心 + 99+ + 想看/已想看
+      Column({ space: rvp(2) }) {
+        Image($r('app.media.my_icon_1'))
+          .width(rvp(18))
+
+        Text(this.isWantSee ? '已想看' : '想看')
+          .fontSize(12)
+          .fontColor(this.isWantSee ? '#24A17B' : $r('app.color.gray'))
       }
+      .onClick(() => {
+        this.handleToggleWantSee()
+      })
 
       Column({ space: rvp(4) }) {
         Image($r('app.media.message')).width(rvp(18)).fillColor($r('app.color.black'))
@@ -263,7 +304,7 @@ export struct Book {
           }
         })
 
-      // ⭐ 改造后的“就要这间了”：弹出填写基本信息
+      // “就要这间了”：弹出填写基本信息
       Button('就要这间了', { type: ButtonType.Normal })
         .borderRadius(rvp(2))
         .backgroundColor('#6BE3BE')

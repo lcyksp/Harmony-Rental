@@ -4,6 +4,7 @@
 import { BarData } from '../../component/ScrollContainer'
 import { HousePictureItem, RentTermItem, RoomDetailModel } from '../../viewmodel/RoomDetailModel'
 import { router } from '@kit.ArkUI'
+import promptAction from '@ohos.promptAction'
 import { getRoomDetailApi } from '../../api/roomDetail'
 import { HousePictureList } from '../../view/roomDetail/HousePictureList'
 import { rvp } from '../../common/utils/DeviceScreen'
@@ -19,7 +20,6 @@ import { Book } from '../../view/roomDetail/Book'
 import { NavBar } from '../../view/roomDetail/NavBar'
 import { getUserHouses, UserHouse } from '../../store/UserHouseStore'
 import { PUBLIC_BASE_URL } from '../../common/utils/Request'   // ⭐ 使用静态资源前缀
-// import promptAction from '@ohos.promptAction';  // 如无使用可删除
 
 @Entry
 @Component
@@ -30,38 +30,44 @@ struct RoomDetail {
   @State housePictureList: HousePictureItem[] = []
   @State rentTerm: RentTermItem = {} as RentTermItem
   @State houseId: string = ''
-
   @State isUserHouse: boolean = false
   @State userHouse: UserHouse = new UserHouse()
+  @State isWantSee: boolean = false
 
-  /**
-   * 生成本地发布房源的假详情
-   */
   private makeLocalDetail(user: UserHouse): RoomDetailModel {
+    // 用本地发布的房源数据拼一个假的 RoomDetailModel
     return {
       id: user.id.toString(),
       address: user.address,
       houseTitle: user.title,
       rentArea: String(user.area),
+
+      // 价格：xxx 元/月
       rentPriceUnit: '元/月',
       rentPriceUnitListing: String(user.price),
 
+      // 本地房源图片，先存文件名，后面统一用 buildPicUrl 转成完整 URL
       housePicture: [
         {
           spaceName: '房源图片',
-          picList: [user.cover]  // 这里是文件名 / 相对路径，后面统一用 buildPicUrl 转
+          picList: [user.cover]
         }
       ],
 
+      // 标签随便给个「个人房源」
       tags: [{ name: '个人房源' }],
+
+      // 优惠信息先空
       discounts: [],
 
+      // 距离信息：本地没有就给个默认文案
       distanceInfo: {
         line: '',
-        name: '该房源附近没有地铁',
+        name: '该房源附近暂无地铁信息',
         distance: ''
       },
 
+      // 基本信息
       metaInfo: [
         { name: '使用面积', desc: String(user.area) },
         { name: '朝向', desc: '南' },
@@ -69,8 +75,12 @@ struct RoomDetail {
         { name: '楼层', desc: '1/1层' }
       ],
 
+      // 下面这几个列表先给空
       rentInfo: [],
+      householdItem: [],
+      support: [],
 
+      // 租住条款，随便给一些默认值
       rentTerm: {
         checkInTime: '随时入住',
         term: '租期可协商',
@@ -84,14 +94,10 @@ struct RoomDetail {
         grounding: '',
         protection: '',
         seeTime: '随时可看'
-      },
-
-      householdItem: [],
-      support: []
+      }
     }
   }
 
-  // 将 picList 中的单个图片字段转换成可访问的完整 URL
   private buildPicUrl(raw: string): string {
     if (!raw) {
       return ''
@@ -99,17 +105,27 @@ struct RoomDetail {
 
     let s: string = raw.trim()
 
-    // 已经是 http/https 了，直接用
+    // 已经是完整 http/https 地址了，直接用
     if (s.startsWith('http://') || s.startsWith('https://')) {
       return s
     }
 
-    // 去掉可能存在的前缀 /public/ 或开头的 /
+    // 去掉可能的 /public/ 前缀和开头的 /
     s = s.replace(/^\/public\//, '').replace(/^\//, '')
 
-    // PUBLIC_BASE_URL 形如 http://192.168.x.x:7000/public/
-    // 所以这里不再拼 'public/'，直接拼文件名
+    // PUBLIC_BASE_URL 一般是形如 http://xxx:7000/public/
+    // 这里直接拼文件名即可
     return PUBLIC_BASE_URL + s
+  }
+
+
+  private toggleWantSee(): void {
+    this.isWantSee = !this.isWantSee
+
+    promptAction.showToast({
+      message: this.isWantSee ? '已加入「想看」' : '已取消「想看」',
+      duration: 2000
+    })
   }
 
   aboutToAppear(): void {
@@ -119,7 +135,6 @@ struct RoomDetail {
 
     console.info('[RoomDetail] idFromRoute = ' + idFromRoute)
 
-    // 查找是否是本地发布房源
     const userList = getUserHouses()
     const found = userList.find(u => u.id.toString() === idFromRoute)
 
@@ -128,7 +143,6 @@ struct RoomDetail {
       this.userHouse = found
       const detail = this.makeLocalDetail(found)
 
-      // 把本地数据也过一遍 buildPicUrl，保证路径一致
       const localPics: HousePictureItem[] = detail.housePicture.map((hp: HousePictureItem) => {
         const pics: string[] = Array.isArray(hp.picList) ? hp.picList : []
         const newPics: string[] = pics.map((p: string) => this.buildPicUrl(p))
@@ -143,7 +157,6 @@ struct RoomDetail {
       return
     }
 
-    // 调后端接口
     getRoomDetailApi(idFromRoute).then((data: RoomDetailModel) => {
       console.info('[RoomDetail] detail = ' + JSON.stringify(data))
 
@@ -151,7 +164,6 @@ struct RoomDetail {
       this.title = data?.houseTitle ?? ''
       this.houseId = data?.id ?? ''
 
-      // 处理 housePicture，统一转成完整 URL
       const rawList: HousePictureItem[] = Array.isArray(data?.housePicture)
         ? data.housePicture
         : []
@@ -166,6 +178,26 @@ struct RoomDetail {
       this.housePictureList = mappedList
       this.rentTerm = data?.rentTerm ?? {} as RentTermItem
     })
+  }
+
+  private getCover(): string {
+    const list: HousePictureItem[] = this.housePictureList ?? []
+    if (list.length === 0) {
+      return ''
+    }
+    const first: HousePictureItem = list[0]
+    const pics: string[] = Array.isArray(first.picList) ? first.picList : []
+    return pics.length > 0 ? pics[0] : ''
+  }
+
+  // 拼价格文案：1100元/月
+  private getPriceText(): string {
+    const listing: string = this.room.rentPriceUnitListing ?? ''
+    const unit: string = this.room.rentPriceUnit ?? ''
+    if (!listing && !unit) {
+      return ''
+    }
+    return `${listing}${unit}`
   }
 
   build() {
@@ -187,7 +219,6 @@ struct RoomDetail {
             DiscountsList({ discountsList: this.room.discounts ?? [] })
             MetaInfo({ metaInfoList: this.room.metaInfo ?? [] })
             TagList({ tagList: this.room.tags ?? [] })
-
           }
           .margin({ top: rvp(16) })
           .padding({ left: rvp(16), right: rvp(16) })
@@ -218,10 +249,21 @@ struct RoomDetail {
       .layoutWeight(1)
       .scrollBar(BarState.Off)
 
-      // 底部预约
-      Book({ houseId: this.isUserHouse ? '' : this.houseId })
+      // ⭐ 底部预约 + 左下角想看
+      Book({
+        houseId: this.houseId,
+        // 标题：整租·华茂1958C区 1室1厅 南...
+        title: this.room.houseTitle ?? '',
+        // 封面：用 getCover() 算
+        cover: this.getCover(),
+        // 价格文案：用 getPriceText() 拼
+        priceText: this.getPriceText(),
+        // 位置文案：直接用 address
+        location: this.room.address ?? ''
+      })
     }
     .height('100%')
     .width('100%')
   }
+
 }

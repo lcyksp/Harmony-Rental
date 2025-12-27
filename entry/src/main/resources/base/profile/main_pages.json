@@ -8,6 +8,7 @@
     "pages/rentRoom/BookRoomList",
     "pages/PublishHouse",
     "pages/ChatList",
-    "view/my/Settings"
+    "view/my/Settings",
+    "pages/MyWantSee"
   ]
 }

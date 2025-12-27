@@ -1,7 +1,5 @@
 /**
  * 预约看房列表
- * @author yongoe
- * @since 2024/8/23
  */
 import { getBookRentRoomListApi } from '../../api/book'
 import { rvp } from '../../common/utils/DeviceScreen'
