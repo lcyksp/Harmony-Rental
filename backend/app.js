@@ -91,7 +91,7 @@ app.use('/upload', uploadRouter);
 app.use('/api', authRouter);
 
 //用户预约
-app.use('/auth/house/reservation', reservationsRouter);
+app.use('/auth/house', reservationsRouter);
 
 const PORT = 7000;
 app.listen(PORT, () => {
