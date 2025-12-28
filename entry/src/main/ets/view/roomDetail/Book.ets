@@ -12,6 +12,18 @@ import { CreateOrderPayload, createRoomOrderApi } from '../../api/room';
 // ⭐ 想看 store
 import { isInWantSee, toggleWantSee } from '../../store/WantSeeStore';
 
+// 兼容 axios 返回的错误结构（显式类型，避免 ArkTS 报错）
+interface AxiosErrorResponseLite {
+  status?: number;
+  data?: object;
+}
+
+interface HttpError extends Error {
+  status?: number;        // 有些封装会直接挂在这里
+  code?: string;          // 比如 'ERR_BAD_REQUEST'
+  response?: AxiosErrorResponseLite; // axios 标准字段
+}
+
 @Component
 export struct Book {
   @StorageProp('bottomRectHeight')
@@ -74,25 +86,60 @@ export struct Book {
     })
   }
 
-
-  // 原有预约弹窗（保留）
+  // 原有预约弹窗
   yuDingController: CustomDialogController = new CustomDialogController({
     builder: YuDing({
       confirm: (param: ReserveRoomParams) => {
+        // 填上当前房源 ID
         param.houseId = this.houseId
 
+        // 打日志确认真正提交的参数
+        console.info('Book.ets submit param => ', JSON.stringify(param))
+
+        // 本地房源：永远预约成功
         if (this.isUserHouse) {
-          // 本地房源逻辑：永远预约成功
           setHouseRented(Number.parseInt(this.houseId), true)
           this.isRented = true
           promptAction.showToast({ message: '预约成功！房源已被标记为已租' })
+          this.yuDingController.close()
           return
         }
 
-        // 后端房源逻辑（原有）
-        reservationApi(param).catch(() => {
-          promptAction.showToast({ message: '预约失败，时间冲突' })
-        })
+        // 后端房源逻辑
+        reservationApi(param)
+          .then(() => {
+            // ✅ 只有 HTTP 2xx 才会走这里
+            promptAction.showToast({ message: '预约成功，等待房东确认' })
+            this.yuDingController.close()
+          })
+          .catch((error: Error) => {
+            const httpError: HttpError = error as HttpError
+
+            // 兼容 axios：优先从 response.status 取，没有再看 error.status
+            let status: number = 0
+            if (httpError.response && httpError.response.status !== undefined) {
+              status = httpError.response.status
+            } else if (httpError.status !== undefined) {
+              status = httpError.status
+            }
+
+            const msg: string = httpError.message || ''
+
+            console.error('reservationApi error raw => status = ', status, ', msg = ', msg)
+
+            if (status === 0 && msg.indexOf('成功') >= 0) {
+              promptAction.showToast({ message: msg }) // 直接弹“预约成功”
+              return
+            }
+
+            if (status === 409 || msg.indexOf('时间冲突') >= 0) {
+              promptAction.showToast({ message: '预约失败：该日期已有人预约' })
+            } else if (status === 400 && msg.indexOf('过去的日期') >= 0) {
+              promptAction.showToast({ message: '不能预约过去的日期' })
+            } else {
+              promptAction.showToast({ message: '预约失败，请稍后重试' })
+            }
+          })
       }
     }),
     alignment: DialogAlignment.Bottom,

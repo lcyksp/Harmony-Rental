@@ -1,3 +1,4 @@
+// entry/src/main/ets/view/my/NavBar.ets
 /**
  * “我的”界面顶部Navbar组件
  */
@@ -12,14 +13,18 @@ export struct NavBar {
   topRectHeight: number = 0
   @Prop barData: BarData
 
+  // ⭐ 小红点：读取全局未读消息数量
+  @StorageLink('unreadCount') unread: number = 0
+
   build() {
     Row() {
-      // 左侧不再显示“业主版”，留一个占位
+      // 左侧不显示内容，保持布局对称
       Blank()
 
       // 右侧三个图标：客服 / 消息 / 设置
       Row({ space: rvp(16) }) {
-        // 客服：暂未开通
+
+        // -------- 客服（无小红点） --------
         Image($r('app.media.customer'))
           .width(rvp(20))
           .height(rvp(20))
@@ -31,18 +36,31 @@ export struct NavBar {
             })
           })
 
-        // 消息：跳到全局 ChatList 页面（放在 pages 目录）
-        Image($r('app.media.message'))
-          .width(rvp(20))
-          .height(rvp(20))
-          .fillColor(this.barData.fontColor)
-          .onClick(() => {
-            router.pushUrl({
-              url: 'pages/ChatList'
-            })
-          })
+        // -------- 消息（带小红点）--------
+        Stack() {
+          Image($r('app.media.message'))
+            .width(rvp(20))
+            .height(rvp(20))
+            .fillColor(this.barData.fontColor)
 
-        // 设置：跳到“我的”目录下的 Settings 页面
+          // 小红点
+          if (this.unread > 0) {
+            Column() { }
+            .width(rvp(8))
+            .height(rvp(8))
+            .borderRadius(rvp(4))
+            .backgroundColor('#FF3B30')
+            .align(Alignment.TopEnd)
+            .offset({ x: rvp(2), y: -rvp(2) })
+          }
+        }
+        .onClick(() => {
+          router.pushUrl({
+            url: 'pages/ChatList'
+          })
+        })
+
+        // -------- 设置 --------
         Image($r('app.media.setting'))
           .width(rvp(20))
           .height(rvp(20))

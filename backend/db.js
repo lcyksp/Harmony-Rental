@@ -43,7 +43,7 @@ export async function getDB() {
         fs.writeFileSync(DB_FILE, Buffer.from(data));
       }
 
-      // 每次启动都确保表存在
+       // 每次启动都确保表存在
       db.run(`
         CREATE TABLE IF NOT EXISTS users (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -52,6 +52,23 @@ export async function getDB() {
           nickname TEXT
         );
       `);
+
+      db.run(`
+        CREATE TABLE IF NOT EXISTS reservation (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id TEXT NOT NULL,
+          house_id TEXT NOT NULL,
+          date TEXT NOT NULL,
+          name TEXT,
+          comment TEXT
+        );
+      `);
+
+        // 如果只是想保留索引（方便查），但不唯一：
+      db.run(`
+        CREATE INDEX IF NOT EXISTS idx_reservation_user_house
+          ON reservation(user_id, house_id);
+        `);
 
       db.saveToDisk = () => {
         const data = db.export();

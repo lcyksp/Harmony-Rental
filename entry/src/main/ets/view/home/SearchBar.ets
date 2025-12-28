@@ -1,7 +1,5 @@
 /**
  * 顶部搜索组件
- * @author yongoe
- * @since 2024/8/31
  */
 import { BarData } from '../../component/ScrollContainer';
 import { router } from '@kit.ArkUI';
@@ -11,13 +9,20 @@ import { rvp } from '../../common/utils/DeviceScreen';
 export struct SearchBar {
   @StorageProp('topRectHeight')
   topRectHeight: number = 0
+
   @Prop barData: BarData
+
+  // ⭐ 全局未读消息数量，用来控制小红点显示
+  @StorageLink('unreadCount') unread: number = 0
 
   build() {
     Row({ space: rvp(16) }) {
+      // 左侧：当前城市
       Text('北京')
         .fontSize(14)
         .fontColor(this.barData.fontColor)
+
+      // 中间：搜索框 + 定位
       Stack() {
         TextInput()
           .placeholderFont({ size: 12 })
@@ -26,19 +31,23 @@ export struct SearchBar {
           .backgroundColor(Color.White)
           .borderColor($r('app.color.gray'))
           .borderWidth(1)
+
         Row() {
           Image($r('app.media.search'))
             .width(rvp(18))
             .height(rvp(18))
+
           Text('公园/地铁')
             .fontSize(10)
             .fontColor($r('app.color.text_gray'))
             .layoutWeight(1)
+
           Column()
             .width(1)
             .height(rvp(18))
             .backgroundColor('#ffababab')
             .margin({ left: rvp(10), right: rvp(10) })
+
           Image($r('app.media.position'))
             .width(rvp(18))
             .height(rvp(18))
@@ -53,10 +62,32 @@ export struct SearchBar {
         })
       })
 
-      Image($r('app.media.message'))
-        .width(rvp(24))
-        .height(rvp(24))
-        .fillColor(this.barData.fontColor)
+      // 右侧：消息按钮（带小红点）
+      Stack() {
+        // 消息图标本体
+        Image($r('app.media.message'))
+          .width(rvp(20))
+          .height(rvp(20))
+          .fillColor(this.barData.fontColor)
+
+        // 小红点：只有 unread > 0 时显示
+        if (this.unread > 0) {
+          Column() {   // 用空 Column，当成一个圆形小块
+          }
+            .width(rvp(8))
+            .height(rvp(8))
+            .borderRadius(rvp(4))
+            .backgroundColor('#FF3B30')
+            .align(Alignment.TopEnd)
+            .offset({ x: rvp(2), y: -rvp(2) }) // 稍微往外挪一点更好看
+        }
+      }
+      .onClick(() => {
+        router.pushUrl({
+          // 这里保持你原来的消息页路由
+          url: 'pages/ChatList'
+        })
+      })
     }
     .width('100%')
     .backgroundColor(this.barData.bgColor)
@@ -66,7 +97,5 @@ export struct SearchBar {
       top: rvp(4) + this.topRectHeight,
       bottom: rvp(6)
     })
-
   }
 }
-

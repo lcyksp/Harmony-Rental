@@ -8,6 +8,7 @@ import roomsRouter from './routes/rooms.js';
 import homeRouter from './routes/home.js';
 import houseRouter from './routes/house.js';
 import authRouter from './routes/auth.js';
+import reservationsRouter from './routes/reservations.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -89,6 +90,8 @@ app.use('/upload', uploadRouter);
 //用户注册登录API
 app.use('/api', authRouter);
 
+//用户预约
+app.use('/auth/house/reservation', reservationsRouter);
 
 const PORT = 7000;
 app.listen(PORT, () => {
