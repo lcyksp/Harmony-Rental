@@ -13,8 +13,9 @@ export struct NavBar {
   topRectHeight: number = 0
   @Prop barData: BarData
 
-  // ⭐ 小红点：读取全局未读消息数量
-  @StorageLink('unreadCount') unread: number = 0
+  // ✅ 小红点：读取全局“是否有未读消息”布尔值
+  @StorageLink('hasUnreadMessage')
+  hasUnreadMessage: boolean = false
 
   build() {
     Row() {
@@ -43,8 +44,8 @@ export struct NavBar {
             .height(rvp(20))
             .fillColor(this.barData.fontColor)
 
-          // 小红点
-          if (this.unread > 0) {
+          // 🔴 小红点：只要 hasUnreadMessage 为 true 就显示
+          if (this.hasUnreadMessage) {
             Column() { }
             .width(rvp(8))
             .height(rvp(8))

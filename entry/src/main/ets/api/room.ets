@@ -70,7 +70,6 @@ class DeleteRoomParam {
   id: string = '';
 }
 
-
 // （后面下单用）
 export class CreateOrderPayload {
   tenantId: string = '';
@@ -339,5 +338,44 @@ export const terminateOrderApi = (orderId: string): Promise<void> => {
 };
 
 // =============================
-// （租客）提交“我要租”订单 - POST /rooms/:id/orders
+// 预约看房 - POST /auth/house/reservation
 // =============================
+
+// ReservationPage 使用的参数类型
+export interface ReservationParams {
+  houseId: string;   // 房源 id
+  name: string;      // 联系人姓名
+  phone: string;     // 联系电话
+  date: string;      // 看房时间
+  comment?: string;  // 备注
+}
+
+// 预约接口真正发给后端的 payload 结构
+class ReservationPayload {
+  roomId: string = '';
+  date: string = '';
+  userName: string = '';
+  remark: string = '';
+  phone: string = '';
+}
+
+// 原始预约 API：把前端参数转成后端需要的字段
+export const reservationApi = (params: ReservationParams): Promise<void> => {
+  // ✅ 用显式的 class，避免 ArkTS 不允许“裸对象”
+  const payload = new ReservationPayload();
+  payload.roomId = params.houseId;
+  payload.date = params.date;
+  payload.userName = params.name;
+  payload.remark = params.comment ?? '';
+  payload.phone = params.phone;
+
+  console.info('reservationApi payload => ', JSON.stringify(payload));
+
+  // ✅ 你的 http.post 只有 1～2 个参数，这里只传 url + body
+  return http.post<void>('/auth/house/reservation', payload);
+};
+
+// 提供给页面调用的别名函数（方便以后扩展）
+export const createReservationApi = (params: ReservationParams): Promise<void> => {
+  return reservationApi(params);
+};

@@ -64,11 +64,28 @@ struct LoginPhone {
     try {
       const data: LoginPwdData = await loginByPwdApi(this.phone, this.password);
 
+      console.log('[LoginPhone] 点击登录时 this.phone = ' + this.phone);
+
       // 能走到这里说明后端 code=200，登录成功（axios 拦截器已判断）
       this.token = data.token;
       AppStorage.setOrCreate('user', data.user);
+      AppStorage.setOrCreate('userPhone', this.phone);
+
+      // ⭐ 写入全局用户手机号（ChatList、消息小红点都靠这个）
+      if (data.user && data.user.id) {
+        AppStorage.setOrCreate('userId', String(data.user.id));
+      }
+      console.log('[LoginPhone] 服务端返回 data.user = ' + JSON.stringify(data.user));
+      console.log('[LoginPhone] 保存 userPhone = ' + this.phone);
+
+      // ⭐ 如果你想兼容 userId，也可以写一下（可选）
+      if (data.user && data.user.id) {
+        AppStorage.SetOrCreate('userId', String(data.user.id));
+      }
+
 
       promptAction.showToast({ message: '登录成功' });
+      console.log('[LoginPhone] 服务端返回 data.user = ' + JSON.stringify(data.user));
 
       if (this.redirectUrl && this.redirectUrl.length > 0) {
         router.replaceUrl({

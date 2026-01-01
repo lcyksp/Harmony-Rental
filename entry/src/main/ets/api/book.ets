@@ -9,6 +9,7 @@ interface ReservationPayload {
   userName: string;
   remark: string;
   phone: string;
+  landlordPhone?: string;
 }
 /**
  * 提交预约
@@ -24,7 +25,8 @@ export const reservationApi = (params: ReserveRoomParams): Promise<void> => {
     date: params.date,
     userName: params.name,
     remark: params.comment ?? '',
-    phone: params.phone
+    phone: params.phone,
+    landlordPhone: params.landlordPhone,
   }
 
   console.info('reservationApi payload => ', JSON.stringify(payload))

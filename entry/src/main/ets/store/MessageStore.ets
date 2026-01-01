@@ -1,4 +1,43 @@
 // entry/src/main/ets/store/MessageStore.ets
+import { getUnreadCountApi } from '../api/message';
+
+const KEY_HAS_UNREAD_MESSAGE: string = 'hasUnreadMessage';
+
+// 确保 hasUnreadMessage 在 AppStorage 里有初始值
+function ensureHasUnreadInit() {
+  if (!AppStorage.Has(KEY_HAS_UNREAD_MESSAGE)) {
+    AppStorage.SetOrCreate(KEY_HAS_UNREAD_MESSAGE, false);
+  }
+}
+
+@Observed
+export class MessageStore {
+  // 不再用 @StorageProp，改为操作 AppStorage 里的 hasUnreadMessage
+  async refresh(userId: string) {
+    ensureHasUnreadInit();
+    try {
+      const count = await getUnreadCountApi(userId);
+      AppStorage.Set(KEY_HAS_UNREAD_MESSAGE, count > 0); // 只关心有没有
+    } catch (err) {
+      console.error('[MessageStore] refresh error: ', JSON.stringify(err));
+    }
+  }
+
+  clear() {
+    ensureHasUnreadInit();
+    AppStorage.Set(KEY_HAS_UNREAD_MESSAGE, false);
+  }
+
+  // 如果需要在代码里读当前状态，可以用这个 getter
+  get hasUnread(): boolean {
+    ensureHasUnreadInit();
+    return AppStorage.Get(KEY_HAS_UNREAD_MESSAGE) as boolean;
+  }
+}
+
+export const messageStore = new MessageStore();
+
+// ================== 以下是你原来的“本地消息列表”逻辑 ==================
 
 // 单条消息结构
 export interface ChatMessage {
@@ -23,7 +62,7 @@ const KEY_ALL_MESSAGES: string = 'allMessages'
 const KEY_UNREAD_COUNT: string = 'unreadCount'
 
 // 保证 AppStorage 里有初始值
-function ensureInit() {
+function ensureInitMessages() {
   if (!AppStorage.Has(KEY_ALL_MESSAGES)) {
     AppStorage.SetOrCreate(KEY_ALL_MESSAGES, new Array<ChatMessage>())
   }
@@ -33,7 +72,7 @@ function ensureInit() {
 }
 
 export function getAllMessages(): ChatMessage[] {
-  ensureInit()
+  ensureInitMessages()
   return AppStorage.Get(KEY_ALL_MESSAGES) as ChatMessage[]
 }
 
@@ -42,7 +81,7 @@ function setAllMessages(list: ChatMessage[]) {
 }
 
 export function getUnreadCount(): number {
-  ensureInit()
+  ensureInitMessages()
   return AppStorage.Get(KEY_UNREAD_COUNT) as number
 }
 

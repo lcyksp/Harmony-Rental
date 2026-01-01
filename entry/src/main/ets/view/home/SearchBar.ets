@@ -12,8 +12,9 @@ export struct SearchBar {
 
   @Prop barData: BarData
 
-  // ⭐ 全局未读消息数量，用来控制小红点显示
-  @StorageLink('unreadCount') unread: number = 0
+  // ✅ 改这里：绑定全局 “是否有未读消息” 的布尔值
+  @StorageLink('hasUnreadMessage')
+  hasUnreadMessage: boolean = false
 
   build() {
     Row({ space: rvp(16) }) {
@@ -70,16 +71,15 @@ export struct SearchBar {
           .height(rvp(20))
           .fillColor(this.barData.fontColor)
 
-        // 小红点：只有 unread > 0 时显示
-        if (this.unread > 0) {
-          Column() {   // 用空 Column，当成一个圆形小块
-          }
-            .width(rvp(8))
-            .height(rvp(8))
-            .borderRadius(rvp(4))
-            .backgroundColor('#FF3B30')
-            .align(Alignment.TopEnd)
-            .offset({ x: rvp(2), y: -rvp(2) }) // 稍微往外挪一点更好看
+        // 🔴 小红点：只看 hasUnreadMessage，不显示数字
+        if (this.hasUnreadMessage) {
+          Column() { }
+          .width(rvp(8))
+          .height(rvp(8))
+          .borderRadius(rvp(4))
+          .backgroundColor('#FF3B30')
+          .align(Alignment.TopEnd)
+          .offset({ x: rvp(2), y: -rvp(2) })
         }
       }
       .onClick(() => {

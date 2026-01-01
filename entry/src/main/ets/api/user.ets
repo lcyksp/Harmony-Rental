@@ -19,8 +19,15 @@ export const loginApi = (phone: string, code: string): Promise<LoginResModel> =>
 /**
  * 获取用户信息
  */
-export const getUserInfoApi = (): Promise<UserModel> => {
-  return http.get<UserModel>('/auth/user/userInfo');
+export const getUserInfoApi = (phone?: string): Promise<UserModel> => {
+  let p = phone;
+
+  // 如果调用方没传 phone，则从 AppStorage 里自动取
+  if (!p && AppStorage.Has('userPhone')) {
+    p = AppStorage.Get('userPhone') as string;
+  }
+
+  return http.get<UserModel>('/auth/user/userInfo', { phone: p });
 }
 
 /**
