@@ -128,6 +128,8 @@ struct LoginCode {
       }
 
       AppStorage.setOrCreate('user', user)
+      AppStorage.setOrCreate('userPhone', user.phone);
+      AppStorage.setOrCreate('userId', String(user.id))
 
       promptAction.showToast({ message: '注册成功，已自动登录' })
       this.redirectAfterRegister()

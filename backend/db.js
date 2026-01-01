@@ -43,7 +43,7 @@ export async function getDB() {
         fs.writeFileSync(DB_FILE, Buffer.from(data));
       }
 
-       // 每次启动都确保表存在
+      // 每次启动都确保表存在（用户表）
       db.run(`
         CREATE TABLE IF NOT EXISTS users (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -53,6 +53,7 @@ export async function getDB() {
         );
       `);
 
+      // 预约表
       db.run(`
         CREATE TABLE IF NOT EXISTS reservation (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -64,11 +65,31 @@ export async function getDB() {
         );
       `);
 
-        // 如果只是想保留索引（方便查），但不唯一：
+      // 如果只是想保留索引（方便查），但不唯一：
       db.run(`
         CREATE INDEX IF NOT EXISTS idx_reservation_user_house
           ON reservation(user_id, house_id);
-        `);
+      `);
+
+      // ⭐ 消息表（消息管家用）
+      db.run(`
+        CREATE TABLE IF NOT EXISTS message (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id TEXT NOT NULL,     -- 收消息的人（手机号）
+          type TEXT NOT NULL,        -- 消息类型：reservation / system / rent 等
+          title TEXT NOT NULL,       -- 标题
+          content TEXT NOT NULL,     -- 内容
+          created_at TEXT NOT NULL,  -- 创建时间 ISO 字符串
+          is_read INTEGER NOT NULL DEFAULT 0, -- 0 未读 1 已读
+          extra TEXT                 -- 扩展 JSON，例如房源信息
+        );
+      `);
+
+      // 根据用户和已读状态建索引，方便查未读消息
+      db.run(`
+        CREATE INDEX IF NOT EXISTS idx_message_user
+          ON message(user_id, is_read);
+      `);
 
       db.saveToDisk = () => {
         const data = db.export();

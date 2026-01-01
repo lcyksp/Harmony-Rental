@@ -9,6 +9,7 @@ import homeRouter from './routes/home.js';
 import houseRouter from './routes/house.js';
 import authRouter from './routes/auth.js';
 import reservationsRouter from './routes/reservations.js';
+import messagesRouter from './routes/messages.js'
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -19,13 +20,15 @@ const app = express();
 
 // 简易用户信息接口：GET /auth/user/userInfo
 app.get('/auth/user/userInfo', (req, res) => {
-  // 这里先写死一个测试用户，手机号后面可以用作 ownerId
+  // 当前登录的手机号，从 query 里拿；没有就给个默认（方便测试）
+  const phoneFromClient = req.query.phone || req.query.userId || '13800000000'
+
   const user = {
     id: 1,
-    phone: '13800000000',
+    phone: String(phoneFromClient),
     nickname: '测试用户',
-    avatar: '',          // 头像暂时留空
-    role: 'landlord'     // 你可以写 'landlord' / 'tenant' 等
+    avatar: '',
+    role: 'landlord'
   }
 
   res.json({
@@ -92,6 +95,12 @@ app.use('/api', authRouter);
 
 //用户预约
 app.use('/auth/house', reservationsRouter);
+
+//嗯哼？
+app.use('/auth/house', reservationsRouter)
+
+// ⭐ 消息相关 API
+app.use('/auth/message', messagesRouter)
 
 const PORT = 7000;
 app.listen(PORT, () => {

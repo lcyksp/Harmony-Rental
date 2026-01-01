@@ -6,6 +6,15 @@ import { rvp } from '../../common/utils/DeviceScreen'
 import { ReserveRoomParams } from '../../viewmodel/BookRoomModel'
 import { promptAction } from '@kit.ArkUI'
 
+class ReserveRoomParamsImpl implements ReserveRoomParams {
+  houseId: string = '';
+  name: string = '';
+  phone: string = '';
+  date: string = '';
+  comment: string = '';
+  landlordPhone: string = ''; // 类型中要求，哪怕先给空字符串
+}
+
 @Component
 @CustomDialog
 export struct YuDing {
@@ -18,6 +27,8 @@ export struct YuDing {
   @State phone: string = ''
   @State date: string = ''      // yyyy-MM-dd
   @State remark: string = ''
+
+
 
   // 父组件传进来的确认回调
   confirm: (param: ReserveRoomParams) => void = () => {}
@@ -144,13 +155,13 @@ export struct YuDing {
           }
 
           // 这里用强类型对象，避免 ArkTS 报 no-untyped-obj-literals
-          const param: ReserveRoomParams = {
-            houseId: '',
-            name: this.name,
-            phone: this.phone,
-            date: this.date,
-            comment: this.remark
-          }
+          const param = new ReserveRoomParamsImpl()
+          param.houseId = ''                      // 按你原代码这里是 ''
+          param.name = this.name
+          param.phone = this.phone
+          param.date = this.date
+          param.comment = this.remark
+          param.landlordPhone = ''
 
           console.log(JSON.stringify(param))
 

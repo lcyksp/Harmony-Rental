@@ -27,4 +27,5 @@ export interface ReserveRoomParams {
   houseId: string;
   name: string;
   phone: string;
+  landlordPhone: string
 }
