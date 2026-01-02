@@ -7,13 +7,13 @@ const router = express.Router()
 
 /**
  * 根据房源 ID 查询房东手机号
- * 目前你的 house_info 结构是：
+ * 目前你的 house_info 表结构大致是：
  *   id TEXT PRIMARY KEY,
- *   data TEXT, ...  // data 里是一个 JSON 字符串
+ *   data TEXT          // data 里是 JSON 字符串
  *
- * 以后你只要在 data 这个 JSON 里多存一个字段：
+ * 以后你只要在 data 里增加例如：
  *   { ..., "landlordPhone": "13700000000" }
- * 或者 { ..., "ownerPhone": "13700000000" }
+ * 或 { ..., "ownerPhone": "13700000000" }
  * 这里就可以自动读到。
  */
 async function getLandlordPhoneByHouseId(db, houseId) {
@@ -36,8 +36,8 @@ async function getLandlordPhoneByHouseId(db, houseId) {
 
     const phone =
       obj.landlordPhone ||   // 推荐以后用这个字段
-      obj.ownerPhone ||      // 或者用这个
-      obj.phone ||           // 如果JSON里已有 phone
+      obj.ownerPhone ||      // 或者这个
+      obj.phone ||           // 如果 JSON 里本来就有 phone
       ''
 
     return phone ? String(phone) : ''
@@ -59,7 +59,7 @@ router.post('/reservation', async (req, res) => {
       date,
       userName,
       remark,
-      phone: currentUserPhone,
+      phone,
       landlordPhone: landlordPhoneFromBody
     } = req.body || {}
 
@@ -69,7 +69,7 @@ router.post('/reservation', async (req, res) => {
 
     const db = await getDB()
 
-    // === 不能预约过去的日期 ===
+    // === 校验日期 ===
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
@@ -91,7 +91,7 @@ router.post('/reservation', async (req, res) => {
     const stmt = db.prepare(sql)
     stmt.run([
       phone,           // user_id（租客手机号）
-      roomId,          // house_id（house_info.id）
+      roomId,          // house_id（对应 house_info.id）
       date,
       userName || '',
       remark || ''
@@ -102,7 +102,7 @@ router.post('/reservation', async (req, res) => {
       db.saveToDisk()
     }
 
-    // === 2. 确定房东手机号（优先用前端传的，其次从 house_info 里查） ===
+    // === 2. 决定房东手机号：优先用前端传的 landlordPhone，其次从 house_info 查 ===
     let landlordPhone = landlordPhoneFromBody || ''
     if (!landlordPhone) {
       landlordPhone = await getLandlordPhoneByHouseId(db, roomId)
@@ -118,7 +118,7 @@ router.post('/reservation', async (req, res) => {
       remark
     })
 
-    // 2-1 租客：预约提交成功（你用租客手机号登录应看到这个）
+    // 2-1 租客：预约提交成功
     addMessage(
       phone,
       MESSAGE_TYPES.ORDER,
@@ -129,7 +129,7 @@ router.post('/reservation', async (req, res) => {
       extra
     )
 
-    // 2-2 房东：收到新的预约（只有拿到房东手机号才发）
+    // 2-2 房东：收到新的预约（只有有房东手机号时才发）
     if (landlordPhone) {
       addMessage(
         landlordPhone,
@@ -140,7 +140,7 @@ router.post('/reservation', async (req, res) => {
       )
     } else {
       console.warn(
-        '[reservation] 预约时未找到房东手机号，房东通知消息没有发送，houseId =',
+        '[reservation] 预约时未找到房东手机号，房东通知消息未发送，houseId =',
         roomId
       )
     }
@@ -154,8 +154,7 @@ router.post('/reservation', async (req, res) => {
 
 /**
  * GET /auth/house/reservation/list
- * 查询某个用户的预约列表（给“约看”页面用）
- * query: ?userId=手机号 或 ?phone=手机号
+ * 查询某个用户的预约列表
  */
 router.get('/reservation/list', async (req, res) => {
   try {
@@ -191,7 +190,9 @@ router.get('/reservation/list', async (req, res) => {
     })
   } catch (error) {
     console.error('get reservation list error: ', error)
-    return res.status(500).json({ code: 500, message: 'Internal server error' })
+    return res
+      .status(500)
+      .json({ code: 500, message: 'Internal server error' })
   }
 })
 
@@ -239,7 +240,7 @@ router.post('/reservation/cancel', async (req, res) => {
       db.saveToDisk()
     }
 
-    // 3. 查房东手机号（同样：先看 house_info）
+    // 3. 查房东手机号
     const landlordPhone = await getLandlordPhoneByHouseId(db, houseId)
 
     const extra = JSON.stringify({
@@ -257,7 +258,7 @@ router.post('/reservation/cancel', async (req, res) => {
       extra
     )
 
-    // 房东：预约被取消（如果查到了房东）
+    // 房东：预约被取消
     if (landlordPhone) {
       addMessage(
         landlordPhone,
@@ -268,7 +269,7 @@ router.post('/reservation/cancel', async (req, res) => {
       )
     } else {
       console.warn(
-        '[reservation] 取消预约时未找到房东手机号，房东通知消息没有发送，houseId =',
+        '[reservation] 取消预约时未找到房东手机号，房东通知消息未发送，houseId =',
         houseId
       )
     }
