@@ -1,7 +1,6 @@
+// entry/src/main/ets/common/utils/DeviceScreen
 /**
  * 屏幕设备工具类
- * @author yongoe
- * @since 2024/9/2
  */
 import { GlobalContext } from './GlobalContext'
 import { window } from '@kit.ArkUI'

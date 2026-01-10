@@ -17,6 +17,8 @@ struct PublishHousePage {
   @StorageProp('token') token: string = ''
   // 和“我的 / 消息 / 设置”一样，用来垫过状态栏 / 摄像头
   @StorageProp('topRectHeight') topRectHeight: number = 0
+  // 当前登录用户手机号（发布时用来绑定房东手机号）
+  @StorageProp('userPhone') userPhone: string = ''
 
   // ===== 基础信息 =====
   @State rentType: string = '整租';
@@ -256,7 +258,6 @@ struct PublishHousePage {
 
     const houseId: string = 'AQ' + new Date().getTime().toString()
 
-
     const autoTitle: string = `${this.rentType || '整租'}·${this.community || '某小区'} ` +
       `${this.rooms || '1'}室${this.halls || '1'}厅` +
       (this.orientation ? ` ${this.orientation}` : '')
@@ -271,7 +272,7 @@ struct PublishHousePage {
     const rawList: string[] = this.cover.split(',')
     const picFileList: string[] = []
 
-    // ★ 方案A：数据库只存文件名，不存 URL / IP
+    // ★ 数据库只存文件名，不存 URL / IP
     for (let i = 0; i < rawList.length; i++) {
       let s: string = rawList[i].trim()
       if (s.length === 0) {
@@ -321,6 +322,9 @@ struct PublishHousePage {
     detailJson.rentPriceUnit = '元/月'
     detailJson.ownerId = this.token
     detailJson.status = 'online'
+
+    // ★ 新增：把房东手机号一起存进房源数据
+    detailJson.landlordPhone = this.userPhone
 
     let pic: HousePicture = new HousePicture()
     pic.spaceName = '房间'

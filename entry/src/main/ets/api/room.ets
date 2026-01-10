@@ -37,6 +37,8 @@ export class MetaInfoItem {
 export class PublishRoomPayload {
   id?: string;
   ownerId: string = '';
+  landlordPhone?: string = '';
+
   houseTitle: string = '';
   address: string = '';
   rentPriceUnit: string = '';

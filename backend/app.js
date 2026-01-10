@@ -2,7 +2,7 @@
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
-
+import rentRouter from './routes/rent.js'
 import uploadRouter from './routes/upload.js';
 import roomsRouter from './routes/rooms.js';
 import homeRouter from './routes/home.js';
@@ -20,23 +20,30 @@ const app = express();
 
 // 简易用户信息接口：GET /auth/user/userInfo
 app.get('/auth/user/userInfo', (req, res) => {
-  // 当前登录的手机号，从 query 里拿；没有就给个默认（方便测试）
-  const phoneFromClient = req.query.phone || req.query.userId || '13800000000'
+  const phoneFromClient = req.query.phone || req.query.userId;
+
+  if (!phoneFromClient) {
+    return res.status(401).json({
+      code: 401,
+      data: null,
+      message: '缺少 phone 或 userId'
+    });
+  }
 
   const user = {
     id: 1,
     phone: String(phoneFromClient),
     nickname: '测试用户',
     avatar: '',
-    role: 'landlord'
-  }
+    role: 'landlord' // 暂时写死角色，后面你可以接真用户表
+  };
 
   res.json({
     code: 200,
     data: user,
     message: 'ok'
-  })
-})
+  });
+});
 
 /**
  * 服务页信息：GET /service/info
@@ -101,6 +108,9 @@ app.use('/auth/house', reservationsRouter)
 
 // ⭐ 消息相关 API
 app.use('/auth/message', messagesRouter)
+
+//住房
+app.use('/auth', rentRouter)
 
 const PORT = 7000;
 app.listen(PORT, () => {

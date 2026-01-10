@@ -5,6 +5,7 @@
 import { Card } from '../../component/Card'
 import { router } from '@kit.ArkUI'
 import { rvp } from '../../common/utils/DeviceScreen'
+import { getLandlordRentListApi } from '../../api/rent'   // ✅ 新增：用于红点判断
 
 @Component
 export struct Order {
@@ -34,26 +35,65 @@ export struct Order {
     {
       id: 1,
       text: '租到的房',
-      icon: $r('app.media.my_icon_5')  // 合同图标沿用
+      icon: $r('app.media.my_icon_5')
     },
     {
       id: 2,
       text: '租出的房',
-      icon: $r('app.media.my_icon_6')  // 账单图标沿用
+      icon: $r('app.media.my_icon_6')
     },
     {
       id: 3,
       text: '我发布的',
-      icon: $r('app.media.my_icon_9')  // 钱包图标沿用
+      icon: $r('app.media.my_icon_9')
     }
   ]
+
+  // ✅ 红点：租出的房
+  @State showLeaseDot: boolean = false
+
+  // ✅ 当前用户手机号（房东电话）
+  private userPhone: string = ''
+
+  aboutToAppear() {
+    this.userPhone = this.getCurrentUserPhone()
+    this.refreshLeaseDot()
+  }
+
+  private getCurrentUserPhone(): string {
+    // 尽量兼容你现在项目里已有的存储方式
+    if (AppStorage.Has('phone')) {
+      const p = AppStorage.Get('phone') as string
+      if (p && p.length > 0) return p
+    }
+    if (AppStorage.Has('userId')) {
+      const id = AppStorage.Get('userId') as string
+      if (id && id.length > 0) return id
+    }
+    return ''
+  }
+
+  private async refreshLeaseDot() {
+    if (!this.userPhone) {
+      this.showLeaseDot = false
+      return
+    }
+
+    try {
+      const list = await getLandlordRentListApi(this.userPhone)
+      // ✅ 有“新订单(pending)”或“退租申请(quit_pending)”就亮红点
+      this.showLeaseDot = list.some(it => it.status === 'pending' || it.status === 'quit_pending')
+    } catch (e) {
+      this.showLeaseDot = false
+    }
+  }
 
   build() {
     Column() {
       Card({ cardPadding: rvp(8) }) {
 
         // --------- navList1（想看 / 足迹 / 约看）---------
-        Row({ space: rvp(50) }) {  // 三个图标，间距稍微拉大一点
+        Row({ space: rvp(50) }) {
           ForEach(this.navList1, (nav: INavItem) => {
             Row({ space: rvp(4) }) {
               Image(nav.icon).width(rvp(16)).height(rvp(16))
@@ -62,17 +102,12 @@ export struct Order {
             .onClick(() => {
               switch (nav.text) {
                 case '想看':
-                  // 👉 点“想看”跳到想看列表页
-                  router.pushUrl({
-                    // 注意：这里不要带前面的 '/'
-                    // 确保和 config.json5 里这个页面的 url 一致
-                    url: 'pages/MyWantSee'
-                  })
+                  router.pushUrl({ url: 'pages/MyWantSee' })
                   break
                 case '约看':
-                  router.pushUrl({ url: 'pages/rentRoom/BookRoomList' })
+                  router.pushUrl({ url: 'pages/ReservationList' })
                   break
-                // 足迹先留空，后面有页面再加
+                // 足迹后续再接页面
               }
             })
           }, (nav: INavItem) => nav.id + '')
@@ -86,16 +121,30 @@ export struct Order {
         Row({ space: rvp(39) }) {
           ForEach(this.navList2, (nav: INavItem) => {
             Column({ space: rvp(6) }) {
-              Image(nav.icon).width(rvp(16)).height(rvp(16))
+              // ✅ 图标 + 红点（只对“租出的房”生效）
+              Stack() {
+                Image(nav.icon).width(rvp(16)).height(rvp(16))
+
+                if (nav.text === '租出的房' && this.showLeaseDot) {
+                  Circle()
+                    .width(rvp(6))
+                    .height(rvp(6))
+                    .fill('#FF3B30')
+                    .position({ x: rvp(12), y: rvp(-2) })
+                }
+              }
+              .width(rvp(16))
+              .height(rvp(16))
+
               Text(nav.text).fontSize(rvp(12)).fontColor($r('app.color.black'))
             }
             .onClick(() => {
               switch (nav.text) {
                 case '租到的房':
-                  router.pushUrl({ url: 'pages/my/MyRentList' })
+                  router.pushUrl({ url: 'pages/MyRentList' })
                   break
                 case '租出的房':
-                  router.pushUrl({ url: 'pages/my/MyLeaseList' })
+                  router.pushUrl({ url: 'pages/MyLeaseList' })
                   break
                 case '我发布的':
                   router.pushUrl({ url: 'pages/my/MyPublishedRooms' })

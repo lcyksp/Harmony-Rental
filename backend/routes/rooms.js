@@ -485,10 +485,14 @@ router.post('/', async (req, res) => {
     const ownerId = payload.ownerId || payload.phone || null;
     const status = payload.status || 'online';
 
+    // 关键：把房东手机号也一起写进 JSON
+    const landlordPhone = payload.landlordPhone || null;
+
     const merged = {
       ...payload,
       id: newId,
       ownerId,
+      landlordPhone,
       status
     };
 

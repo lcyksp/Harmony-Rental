@@ -1,3 +1,4 @@
+// entry/src/main/ets/pages/ChatList.ets
 import router from '@ohos.router'
 import { getMessageListApi, readAllMessagesApi, type MessageItem } from '../api/message'
 import { messageStore } from '../store/MessageStore'
@@ -107,6 +108,7 @@ struct ChatListPage {
 
   build() {
     Column() {
+      // 顶部导航
       Row() {
         Text('< 返回')
           .fontSize(16)
@@ -126,9 +128,9 @@ struct ChatListPage {
       .padding({ left: 16, right: 16, top: this.topRectHeight + 8, bottom: 8 })
       .backgroundColor('#8FE1A2')
 
+      // 列表
       Scroll() {
         Column() {
-          // 空状态
           if (this.chats.length === 0) {
             Column() {
               Text('暂无消息')
@@ -140,46 +142,60 @@ struct ChatListPage {
             .align(Alignment.Center)
           } else {
             ForEach(this.chats, (item: ChatItem) => {
-              Row() {
-
-                // ⭐ 左侧圆圈（无变量声明）
+              // 单条消息卡片
+              Row({ space: 12 }) {
+                // 左侧圆圈
                 Column() {
                   Text(item.label)
                     .fontSize(16)
                     .fontColor('#FFF')
+                    .fontWeight(FontWeight.Medium)
                     .textAlign(TextAlign.Center)
-                    .width(40)
-                    .height(40)
-                    .backgroundColor(item.color)
-                    .borderRadius(20)
+                    .width('100%')
+                    .height('100%')
+                    .align(Alignment.Center)
                 }
-                .margin({ right: 12 })
+                .width(40)
+                .height(40)
+                .borderRadius(20)
+                .backgroundColor(item.color)
 
+                // 右侧文字区域
                 Column() {
+                  // 第一行：类型 + 标题 + 时间
                   Row() {
-                    // 显示：[系统]/[订单]/[通知]
                     Text('[' + item.label + ']')
                       .fontSize(12)
                       .fontColor('#999')
                       .margin({ right: 4 })
 
+                    // 标题：单行省略号，不会挤到时间
                     Text(item.title)
                       .fontSize(16)
                       .fontWeight(item.unread ? FontWeight.Bold : FontWeight.Medium)
                       .fontColor('#333')
+                      .maxLines(1)
+                      .textOverflow({ overflow: TextOverflow.Ellipsis })
+                      .margin({ right: 8 })
                       .layoutWeight(1)
 
                     Text(item.time)
                       .fontSize(12)
                       .fontColor('#999')
                   }
+                  .width('100%')
+                  .alignItems(VerticalAlign.Center)
 
+                  // 第二行：最后一条内容，最多两行
                   Text(item.lastMsg)
                     .fontSize(14)
                     .fontColor('#777')
                     .margin({ top: 4 })
                     .width('100%')
+                    .maxLines(2)
+                    .textOverflow({ overflow: TextOverflow.Ellipsis })
                 }
+                .layoutWeight(1)
               }
               .width('100%')
               .padding({ left: 16, right: 16, top: 12, bottom: 12 })

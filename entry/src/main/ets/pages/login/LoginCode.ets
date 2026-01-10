@@ -112,10 +112,10 @@ struct LoginCode {
 
       const res: RegisterResp = await registerApi(req)
 
-      // 处理 token
+      // 1. 处理 token（StorageLink，会自动同步到全局）
       this.token = res.token ?? ('mock-token-' + this.phone)
 
-      // 处理 user
+      // 2. 构造 user 对象
       const user = new UserInfo()
       if (res.user) {
         user.id = res.user.id
@@ -127,14 +127,18 @@ struct LoginCode {
         user.phone = this.phone
       }
 
-      AppStorage.setOrCreate('user', user)
-      AppStorage.setOrCreate('userPhone', user.phone);
-      AppStorage.setOrCreate('userId', String(user.id))
+      // 3. 强制覆盖全局 AppStorage 中的用户信息
+      //    注意这里用 set，而不是 setOrCreate，确保每次注册/登录都刷新为新手机号
+      AppStorage.set('user', user)
+      AppStorage.set('userPhone', user.phone)
+      AppStorage.set('userId', String(user.id))
+
+      // 如果你有未读消息的小红点，全新账号建议清一下
+      AppStorage.set('hasUnreadMessage', false)
 
       promptAction.showToast({ message: '注册成功，已自动登录' })
       this.redirectAfterRegister()
     } catch (e) {
-      // 不写类型，不用 any/unknown，只给个兜底提示
       console.log('register error', e);
       promptAction.showToast({ message: '注册失败，请稍后重试' })
     }

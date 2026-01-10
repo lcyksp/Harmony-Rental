@@ -5,6 +5,8 @@ import { promptAction, router } from '@kit.ArkUI';
 import { rvp } from '../../common/utils/DeviceScreen';
 import { ReserveRoomParams } from '../../viewmodel/BookRoomModel';
 import { getUserHouses, UserHouse, setHouseRented } from '../../store/UserHouseStore';
+import { createRentApi } from '../../api/rent';
+
 
 // 下单接口
 import { CreateOrderPayload, createRoomOrderApi } from '../../api/room';
@@ -213,10 +215,9 @@ export struct Book {
 
     this.baseSubmitting = true
 
-    createRoomOrderApi(this.houseId, payload)
+    createRentApi(this.houseId, phoneTrim, this.baseRemark.trim())
       .then(() => {
         promptAction.showToast({ message: '信息已提交，等待房东确认' })
-        // 提交成功后收起弹窗并清空表单
         this.baseInfoController.close()
         this.baseRemark = ''
       })

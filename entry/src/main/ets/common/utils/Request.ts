@@ -1,4 +1,4 @@
-// src/main/ets/common/utils/Request.ets
+// src/main/ets/common/utils/Request.ts
 import axios from '@ohos/axios';
 import { promptAction } from '@kit.ArkUI';
 
@@ -8,7 +8,7 @@ export interface AnyObject {
 
 // 这里改电脑的局域网 IP + Node 后端端口
 const instance = axios.create({
-  baseURL: 'http://192.168.3.49:7000',
+  baseURL: 'http://192.168.3.159:7000',
   timeout: 10000, // 给个超时时间，避免请求挂死
 });
 

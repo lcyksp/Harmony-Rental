@@ -9,6 +9,9 @@
     "pages/PublishHouse",
     "pages/ChatList",
     "view/my/Settings",
-    "pages/MyWantSee"
+    "pages/MyWantSee",
+    "pages/ReservationList",
+    "pages/MyRentList",
+    "pages/MyLeaseList"
   ]
 }
