@@ -7,10 +7,6 @@ import { ReserveRoomParams } from '../../viewmodel/BookRoomModel';
 import { getUserHouses, UserHouse, setHouseRented } from '../../store/UserHouseStore';
 import { createRentApi } from '../../api/rent';
 
-
-// 下单接口
-import { CreateOrderPayload, createRoomOrderApi } from '../../api/room';
-
 // ⭐ 想看 store
 import { isInWantSee, toggleWantSee } from '../../store/WantSeeStore';
 
@@ -194,7 +190,6 @@ export struct Book {
    */
   private submitBaseInfo() {
     const phoneTrim: string = this.basePhone.trim()
-    const nameTrim: string = this.baseName.trim()
 
     if (!phoneTrim) {
       promptAction.showToast({ message: '请输入手机号' })
@@ -206,12 +201,6 @@ export struct Book {
       promptAction.showToast({ message: '房源信息缺失，无法提交' })
       return
     }
-
-    const payload: CreateOrderPayload = new CreateOrderPayload()
-    payload.tenantId = phoneTrim             // 直接用手机号作为租客唯一标识
-    payload.tenantName = nameTrim || '租客'
-    payload.tenantPhone = phoneTrim
-    payload.remark = this.baseRemark.trim()
 
     this.baseSubmitting = true
 

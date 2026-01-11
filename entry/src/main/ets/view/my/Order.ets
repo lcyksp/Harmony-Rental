@@ -1,58 +1,23 @@
-// entry/src/main/ets/view/my/Order.ets
-/**
- * “我的”页面功能入口：想看 / 足迹 / 约看  +  租到的 / 租出的 / 已发布房源
- */
 import { Card } from '../../component/Card'
 import { router } from '@kit.ArkUI'
 import { rvp } from '../../common/utils/DeviceScreen'
-import { getLandlordRentListApi } from '../../api/rent'   // ✅ 新增：用于红点判断
+import { getLandlordRentListApi, RentContractItem } from '../../api/rent'
 
 @Component
 export struct Order {
-  // ⭐ 上面一排：只保留 3 个（想看 / 足迹 / 约看），去掉“拼租”
   navList1: INavList = [
-    {
-      id: 1,
-      text: '想看',
-      icon: $r('app.media.my_icon_1')
-    },
-    {
-      id: 2,
-      text: '足迹',
-      icon: $r('app.media.my_icon_2')
-    },
-    {
-      id: 3,
-      text: '约看',
-      icon: $r('app.media.my_icon_3')
-    }
+    { id: 1, text: '想看', icon: $r('app.media.my_icon_1') },
+    { id: 2, text: '足迹', icon: $r('app.media.my_icon_2') },
+    { id: 3, text: '约看', icon: $r('app.media.my_icon_3') }
   ]
 
-  /**
-   * 下边一排：租到的 / 租出的 / 我发布的
-   */
   navList2: INavList = [
-    {
-      id: 1,
-      text: '租到的房',
-      icon: $r('app.media.my_icon_5')
-    },
-    {
-      id: 2,
-      text: '租出的房',
-      icon: $r('app.media.my_icon_6')
-    },
-    {
-      id: 3,
-      text: '我发布的',
-      icon: $r('app.media.my_icon_9')
-    }
+    { id: 1, text: '租到的房', icon: $r('app.media.my_icon_5') },
+    { id: 2, text: '租出的房', icon: $r('app.media.my_icon_6') },
+    { id: 3, text: '我发布的', icon: $r('app.media.my_icon_9') }
   ]
 
-  // ✅ 红点：租出的房
   @State showLeaseDot: boolean = false
-
-  // ✅ 当前用户手机号（房东电话）
   private userPhone: string = ''
 
   aboutToAppear() {
@@ -61,14 +26,17 @@ export struct Order {
   }
 
   private getCurrentUserPhone(): string {
-    // 尽量兼容你现在项目里已有的存储方式
+    if (AppStorage.Has('userPhone')) {
+      const p: string | undefined | null = AppStorage.Get('userPhone') as (string | undefined | null)
+      if (typeof p === 'string' && p.length > 0) return p
+    }
     if (AppStorage.Has('phone')) {
-      const p = AppStorage.Get('phone') as string
-      if (p && p.length > 0) return p
+      const p: string | undefined | null = AppStorage.Get('phone') as (string | undefined | null)
+      if (typeof p === 'string' && p.length > 0) return p
     }
     if (AppStorage.Has('userId')) {
-      const id = AppStorage.Get('userId') as string
-      if (id && id.length > 0) return id
+      const id: string | undefined | null = AppStorage.Get('userId') as (string | undefined | null)
+      if (typeof id === 'string' && id.length > 0) return id
     }
     return ''
   }
@@ -80,9 +48,12 @@ export struct Order {
     }
 
     try {
-      const list = await getLandlordRentListApi(this.userPhone)
-      // ✅ 有“新订单(pending)”或“退租申请(quit_pending)”就亮红点
-      this.showLeaseDot = list.some(it => it.status === 'pending' || it.status === 'quit_pending')
+      const res: RentContractItem[] = await getLandlordRentListApi(this.userPhone)
+      const list: RentContractItem[] = Array.isArray(res) ? res : []
+
+      this.showLeaseDot = list.some(
+        (it: RentContractItem) => it.status === 'pending' || it.status === 'quit_pending'
+      )
     } catch (e) {
       this.showLeaseDot = false
     }
@@ -92,7 +63,6 @@ export struct Order {
     Column() {
       Card({ cardPadding: rvp(8) }) {
 
-        // --------- navList1（想看 / 足迹 / 约看）---------
         Row({ space: rvp(50) }) {
           ForEach(this.navList1, (nav: INavItem) => {
             Row({ space: rvp(4) }) {
@@ -107,21 +77,18 @@ export struct Order {
                 case '约看':
                   router.pushUrl({ url: 'pages/ReservationList' })
                   break
-                // 足迹后续再接页面
               }
             })
-          }, (nav: INavItem) => nav.id + '')
+          }, (nav: INavItem) => nav.id.toString())
         }
         .width('100%')
         .justifyContent(FlexAlign.Center)
 
         Divider().margin({ top: rvp(16) })
 
-        // --------- navList2（租到的 / 租出的 / 我发布的）---------
         Row({ space: rvp(39) }) {
           ForEach(this.navList2, (nav: INavItem) => {
             Column({ space: rvp(6) }) {
-              // ✅ 图标 + 红点（只对“租出的房”生效）
               Stack() {
                 Image(nav.icon).width(rvp(16)).height(rvp(16))
 
@@ -151,7 +118,7 @@ export struct Order {
                   break
               }
             })
-          }, (nav: INavItem) => nav.id + '')
+          }, (nav: INavItem) => nav.id.toString())
         }
         .margin({ top: rvp(12) })
         .justifyContent(FlexAlign.Center)

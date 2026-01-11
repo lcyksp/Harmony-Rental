@@ -1,3 +1,4 @@
+// entry/src/main/ets/pages/MyRentList.ets
 import router from '@ohos.router';
 import prompt from '@ohos.prompt';
 import { rvp } from '../common/utils/DeviceScreen';
@@ -9,25 +10,22 @@ interface UserInfo {
 }
 
 function getCurrentUserPhone(): string {
-  // 1) 你工程登录后真正存的是 userPhone
+  // ✅ 登录页写入的是 userPhone（你 LoginPhone.ets 里就是 AppStorage.set('userPhone', data.user.phone)）
   if (AppStorage.Has('userPhone')) {
     const p = AppStorage.Get('userPhone') as string
     if (p && p.length > 0) return p
   }
 
-  // 2) 兜底：从 user 对象里取 phone（ChatList.ets 同款写法）
+  // 兜底：从 user 里取 phone
   if (AppStorage.Has('user')) {
-    const usr = AppStorage.Get('user') as object
-    const phone = Reflect.get(usr, 'phone') as string
-    if (phone && phone.length > 0) {
-      AppStorage.setOrCreate('userPhone', phone)
-      return phone
+    const u = AppStorage.Get('user') as UserInfo
+    if (u?.phone && u.phone.length > 0) {
+      AppStorage.setOrCreate('userPhone', u.phone)
+      return u.phone
     }
-    const userId = Reflect.get(usr, 'userId') as string
-    if (userId && userId.length > 0) return userId
+    if (u?.userId && u.userId.length > 0) return u.userId
   }
 
-  // 3) 最后兜底：userId
   if (AppStorage.Has('userId')) {
     const id = AppStorage.Get('userId') as string
     if (id && id.length > 0) return id
@@ -64,13 +62,14 @@ struct MyRentList {
       this.list = [];
       return;
     }
+
     this.loading = true;
     try {
-      const data = await getMyActiveRentApi(this.userPhone);
-      this.list = Array.isArray(data) ? data : [];
+      const list: RentContractItem[] = await getMyActiveRentApi(this.userPhone);
+      this.list = [...list];
     } catch (e) {
-      prompt.showToast({ message: '加载失败' });
       this.list = [];
+      prompt.showToast({ message: '加载失败' });
     } finally {
       this.loading = false;
     }

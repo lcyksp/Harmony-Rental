@@ -1,102 +1,100 @@
 // src/main/ets/common/utils/Request.ts
-import axios from '@ohos/axios';
-import { promptAction } from '@kit.ArkUI';
+import axios from '@ohos/axios'
+import { promptAction } from '@kit.ArkUI'
 
 export interface AnyObject {
-  [key: string]: any;
+  [key: string]: any
 }
 
-// 这里改电脑的局域网 IP + Node 后端端口
 const instance = axios.create({
-  baseURL: 'http://192.168.3.159:7000',
-  timeout: 10000, // 给个超时时间，避免请求挂死
-});
+  baseURL: 'http://192.168.3.49:7000',
+  timeout: 10000,
+  // ✅ 无论 200/400/500 都走 response 成功回调，从而必定打印 📥
+  validateStatus: () => true,
+})
 
 // 导出统一的服务端地址和 public 前缀
-export const SERVER_URL: string = instance.defaults.baseURL ?? '';
-export const PUBLIC_BASE_URL: string = SERVER_URL + '/public/';
+export const SERVER_URL: string = instance.defaults.baseURL ?? ''
+export const PUBLIC_BASE_URL: string = SERVER_URL + '/public/'
 
 /**
- * 请求拦截：这里主要加日志
+ * 请求拦截：加日志
+ * ✅ 保持 any，避免 axios InternalAxiosRequestConfig 类型兼容问题
  */
 instance.interceptors.request.use(
   (config: any) => {
-    console.log(
-      '📤 [HTTP Request] =>',//加个图标只是为了方便找日志来调试
-      config.method,
+    console.info(
+      '📤 [HTTP Request] =>',
+      (config.method || '').toUpperCase(),
       config.url || config.baseURL,
       'params =',
       JSON.stringify(config.params || {}),
       'data =',
       JSON.stringify(config.data || {}),
-    );
-    return config;
+    )
+    return config
   },
   (error: any) => {
-    console.log('❌ [HTTP Request Error] =>', JSON.stringify(error));
-    return Promise.reject(error);
+    console.error('❌ [HTTP Request Error] =>', error?.message || '', JSON.stringify(error))
+    return Promise.reject(error)
   }
-);
-
+)
 
 /**
- * 响应拦截：同样加日志 + 保留你原来的 code===200 逻辑
+ * 响应拦截：无论 httpStatus 是多少，都在这里打印并按 {code} 决定成功失败
+ * ✅ 关键修复：成功时只返回 response.data.data，不再把 {list,total} 拍扁成 list[]
  */
 instance.interceptors.response.use(
   (response: AnyObject) => {
-    console.log(
+    console.info(
       '📥 [HTTP Response] =>',
+      (response.config?.method || '').toUpperCase(),
       response.config?.url,
-      'status =',
+      'httpStatus =',
       response.status,
       'data =',
       JSON.stringify(response.data || {})
-    );
+    )
 
-    // 按你原来的约定：后端统一返回 { code, data, message }
+    // 后端统一返回 { code, data, message }
     if (response.data && response.data.code === 200) {
-      // 这一行非常关键：后面 http.get() 拿到的就是 data 这一层
-      return response.data.data;
+      // ✅ 改回去：原样返回 data（可能是 {list,total} / 数组 / 对象）
+      return response.data.data
     }
 
-    // code 不是 200，弹 toast
     const msg =
-      (response.data && response.data.message) ||
-        '请求失败 (code != 200)';
-    promptAction.showToast({
-      message: msg,
-    });
-    return Promise.reject(response.data);
+      response.data?.message ||
+        `请求失败 http=${response.status}`
+
+    promptAction.showToast({ message: msg })
+    return Promise.reject(response.data)
   },
   (error: any) => {
-    console.log('❌ [HTTP Response Error] =>', JSON.stringify(error));
-    promptAction.showToast({
-      message: error.message || '网络错误',
-    });
-    return Promise.reject(error);
+    // validateStatus 已经让大多数错误走上面；这里兜底处理：超时/断网等
+    const msg = error?.message || '网络错误'
+    console.error('❌ [HTTP Response Error] =>', msg, JSON.stringify(error))
+    promptAction.showToast({ message: msg })
+    return Promise.reject(error)
   }
-);
+)
 
 class Request {
-  constructor() {
-    console.log('初始化 http 实例');
-  }
-
   get<T>(url: string, params?: AnyObject) {
-    return instance.get<any, T>(url, { params });
+    return instance.get<any, T>(url, { params })
   }
 
   post<T>(url: string, data?: AnyObject) {
-    return instance.post<any, T>(url, data);
+    return instance.post<any, T>(url, data)
   }
 
   put<T>(url: string, data?: AnyObject) {
-    return instance.put<any, T>(url, data);
+    return instance.put<any, T>(url, data)
   }
 
   delete<T>(url: string, params?: AnyObject) {
-    return instance.delete<any, T>(url, { params });
+    return instance.delete<any, T>(url, { params })
   }
 }
 
-export const http = new Request();
+export const http = new Request()
+

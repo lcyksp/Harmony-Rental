@@ -8,6 +8,7 @@ const router = express.Router()
 const RENT_STATUS = {
   PENDING: 'pending',
   ACTIVE: 'active',
+  QUIT_PENDING: 'quit_pending',
   ENDED: 'ended',
   REJECTED: 'rejected'
 }
@@ -146,6 +147,8 @@ router.post('/rent/create', async (req, res) => {
       return res.status(400).json({ code: 400, message: '未找到房东信息' })
     }
 
+    // ✅ 允许多人/多次下订：不做防重复拦截
+
     const now = Date.now()
 
     const stmt = db.prepare(`
@@ -210,18 +213,19 @@ router.post('/rent/create', async (req, res) => {
 router.get('/rent/landlord-list', async (req, res) => {
   try {
     const phone = req.query.phone
+    const status = req.query.status
     if (!phone) {
       return res.status(400).json({ code: 400, message: '缺少 phone' })
     }
 
     const db = await getDB()
-    const stmt = db.prepare(`
-      SELECT *
-      FROM rent_contract
-      WHERE landlord_phone = ?
-      ORDER BY created_at DESC
-    `)
-    stmt.bind([phone])
+    // ✅ 可选 status 过滤（方便前端 tab 精确查询）
+    const sql = status
+      ? `SELECT * FROM rent_contract WHERE landlord_phone = ? AND status = ? ORDER BY created_at DESC`
+      : `SELECT * FROM rent_contract WHERE landlord_phone = ? ORDER BY created_at DESC`
+
+    const stmt = db.prepare(sql)
+    status ? stmt.bind([phone, status]) : stmt.bind([phone])
 
     const list = []
     while (stmt.step()) {
@@ -230,6 +234,12 @@ router.get('/rent/landlord-list', async (req, res) => {
 
       list.push({
         ...row,
+        // ✅ 兼容前端 camelCase
+        houseId: row.house_id,
+        tenantPhone: row.tenant_phone,
+        landlordPhone: row.landlord_phone,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
         houseTitle: title,
         coverUrl
       })
@@ -268,28 +278,7 @@ router.post('/rent/confirm', async (req, res) => {
       return res.status(403).json({ code: 403, message: '无权操作' })
     }
 
-    // 2) 防重复出租：如果房源已 rented，拒绝 confirm
-    //    这里直接从 house_info.data 读 rentStatus（没有就当 available）
-    let rentStatus = 'available'
-    {
-      const hs = db.prepare('SELECT data FROM house_info WHERE id = ?')
-      hs.bind([row.house_id])
-      if (hs.step()) {
-        const houseRow = hs.getAsObject()
-        try {
-          const obj = houseRow?.data ? JSON.parse(houseRow.data) : {}
-          rentStatus = obj?.rentStatus || 'available'
-        } catch (e) {}
-      }
-      hs.free()
-    }
-
-    if (rentStatus === 'rented') {
-      return res.status(409).json({
-        code: 409,
-        message: '该房源已出租，无法再次确认'
-      })
-    }
+    // ✅ 合租模式：不检查 house_info.data.rentStatus
 
     // 3) 更新合同为 active
     const now = Date.now()
@@ -301,8 +290,7 @@ router.post('/rent/confirm', async (req, res) => {
     u.run([RENT_STATUS.ACTIVE, now, id])
     u.free()
 
-    // 4) 更新房源状态为 rented（关键）
-    setHouseRentStatus(db, row.house_id, 'rented', id)
+    // ✅ 合租模式：不修改 house_info 的 rentStatus
 
     if (db.saveToDisk) db.saveToDisk()
 
@@ -359,6 +347,12 @@ router.get('/rent/my-active', async (req, res) => {
       const { title, coverUrl } = getHouseSummary(db, row.house_id, req)
       list.push({
         ...row,
+        // ✅ 兼容前端 camelCase
+        houseId: row.house_id,
+        tenantPhone: row.tenant_phone,
+        landlordPhone: row.landlord_phone,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
         houseTitle: title,
         coverUrl
       })
@@ -406,7 +400,7 @@ router.post('/rent/quit/apply', async (req, res) => {
       SET status = ?, updated_at = ?, remark = ?
       WHERE id = ?
     `)
-    u.run(['quit_pending', now, reason || '', id])
+    u.run([RENT_STATUS.QUIT_PENDING, now, reason || '', id])
     u.free()
 
     if (db.saveToDisk) db.saveToDisk()
@@ -452,7 +446,7 @@ router.post('/rent/quit/confirm', async (req, res) => {
     const row = q.getAsObject()
     q.free()
 
-    if (row.landlord_phone !== landlordPhone || row.status !== 'quit_pending') {
+    if (row.landlord_phone !== landlordPhone || row.status !== RENT_STATUS.QUIT_PENDING) {
       return res.status(403).json({ code: 403, message: '无权操作' })
     }
 
@@ -465,8 +459,7 @@ router.post('/rent/quit/confirm', async (req, res) => {
     u.run([RENT_STATUS.ENDED, now, id])
     u.free()
 
-    // 房源恢复可出租
-    setHouseRentStatus(db, row.house_id, 'available', null)
+    // ✅ 合租模式：退租不修改 house_info 的 rentStatus
 
     if (db.saveToDisk) db.saveToDisk()
 
@@ -510,7 +503,7 @@ router.post('/rent/quit/reject', async (req, res) => {
     const row = q.getAsObject()
     q.free()
 
-    if (row.landlord_phone !== landlordPhone || row.status !== 'quit_pending') {
+    if (row.landlord_phone !== landlordPhone || row.status !== RENT_STATUS.QUIT_PENDING) {
       return res.status(403).json({ code: 403, message: '无权操作' })
     }
 
