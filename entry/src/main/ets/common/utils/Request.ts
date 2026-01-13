@@ -7,7 +7,7 @@ export interface AnyObject {
 }
 
 const instance = axios.create({
-  baseURL: 'http://192.168.3.49:7000',
+  baseURL: 'http://192.168.1.104:7000',
   timeout: 10000,
   // ✅ 无论 200/400/500 都走 response 成功回调，从而必定打印 📥
   validateStatus: () => true,

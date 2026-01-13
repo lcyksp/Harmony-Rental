@@ -72,10 +72,13 @@ export struct Order {
             .onClick(() => {
               switch (nav.text) {
                 case '想看':
-                  router.pushUrl({ url: 'pages/MyWantSee' })
+                  router.pushUrl({ url: 'view/my/MyWantSee' })
+                  break
+                case '足迹':
+                  router.pushUrl({ url: 'view/my/Footprint' })
                   break
                 case '约看':
-                  router.pushUrl({ url: 'pages/ReservationList' })
+                  router.pushUrl({ url: 'view/my/ReservationList' })
                   break
               }
             })
@@ -108,13 +111,13 @@ export struct Order {
             .onClick(() => {
               switch (nav.text) {
                 case '租到的房':
-                  router.pushUrl({ url: 'pages/MyRentList' })
+                  router.pushUrl({ url: 'view/my/MyRentList' })
                   break
                 case '租出的房':
-                  router.pushUrl({ url: 'pages/MyLeaseList' })
+                  router.pushUrl({ url: 'view/my/MyLeaseList' })
                   break
                 case '我发布的':
-                  router.pushUrl({ url: 'pages/my/MyPublishedRooms' })
+                  router.pushUrl({ url: 'view/my/MyPubList' })
                   break
               }
             })

@@ -9,9 +9,12 @@
     "pages/PublishHouse",
     "pages/ChatList",
     "view/my/Settings",
-    "pages/MyWantSee",
-    "pages/ReservationList",
-    "pages/MyRentList",
-    "pages/MyLeaseList"
+    "view/my/MyWantSee",
+    "view/my/ReservationList",
+    "view/my/MyRentList",
+    "view/my/MyLeaseList",
+    "view/my/MyPubList",
+    "view/my/Footprint",
+    "view/home/RegionSelect"
   ]
 }

@@ -11,7 +11,7 @@ import { Ad } from '../home/Ad'
 import { NavList } from '../home/NavList'
 import { PlanList } from '../home/PlanList'
 import { RoomRecommend } from '../home/RoomRecommend'
-import { SearchBar } from '../home/SearchBar'
+import SearchBar from '../home/SearchBar'
 import { SwiperLayout } from '../home/SwiperLayout'
 import { TileList } from '../home/TileList'
 
@@ -34,6 +34,11 @@ export struct Home {
   @State planList: PlanItem[] = []
   @State tileList: TileItem[] = []
 
+  // ✅ 关键：让 Home 感知区域变化
+  @StorageLink('currentProvinceCode') currentProvinceCode: string = ''
+  @StorageLink('currentCityCode') currentCityCode: string = ''
+  @StorageLink('currentDistrictCode') currentDistrictCode: string = ''
+
   aboutToAppear(): void {
     getHomeDataApi()
       .then((data: HomeDataModel) => {
@@ -49,7 +54,6 @@ export struct Home {
 
   @Builder
   navBar() {
-    // SearchBar 目前真实的参数只需要 barData（和 ScrollContainer 配合用）
     SearchBar({ barData: this.barData })
   }
 
@@ -60,10 +64,12 @@ export struct Home {
       Column({ space: rvp(8) }) {
         NavList({ navList: this.navList })
         TileList({ tileList: this.tileList })
-        // 这里原来就只是一个组件，不再给它传 planList
         PlanList()
         Ad({ adPicture: this.adPicture })
+
+        // ✅ 关键：区域变化时强制重建 RoomRecommend
         RoomRecommend()
+          .key(`${this.currentProvinceCode}_${this.currentCityCode}_${this.currentDistrictCode}`)
       }
       .padding(rvp(16))
     }

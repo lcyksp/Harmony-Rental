@@ -90,3 +90,12 @@ export const createRentApi = (houseId: string, tenantPhone: string, remark?: str
     remark: remark ?? ''
   });
 }
+/** ✅ 房东：驳回/取消出租（待确认时） */
+export const rejectRentApi = (id: number, landlordPhone: string, reason?: string): Promise<void> => {
+  return http.post<void>('/auth/rent/reject', {
+    id,
+    landlordPhone,
+    reason: reason ?? ''
+  });
+}
+

@@ -8,8 +8,10 @@ import roomsRouter from './routes/rooms.js';
 import homeRouter from './routes/home.js';
 import houseRouter from './routes/house.js';
 import authRouter from './routes/auth.js';
+import footprintRouter from './routes/footprint.js'
 import reservationsRouter from './routes/reservations.js';
 import messagesRouter from './routes/messages.js'
+import regionRouter from './routes/region.js'
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -77,6 +79,10 @@ app.get('/discover/info', (req, res) => {
   })
 })
 
+app.use((req, res, next) => {
+  console.log(`[REQ] ${req.method} ${req.originalUrl}`)
+  next()
+})
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -111,6 +117,18 @@ app.use('/auth/message', messagesRouter)
 
 //住房
 app.use('/auth', rentRouter)
+
+//足迹
+app.use('/auth', footprintRouter)
+
+//定位
+app.use('/region', regionRouter)
+console.log('[app] /region router mounted ✅')
+
+app.use((req, res) => {
+  console.log(`[404] ${req.method} ${req.originalUrl}`)
+  res.status(404).json({ code: 404, message: 'Not Found' })
+})
 
 const PORT = 7000;
 app.listen(PORT, () => {

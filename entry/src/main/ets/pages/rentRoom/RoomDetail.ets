@@ -1,3 +1,4 @@
+// entry/src/main/ets/pages/rentRoom/RoomDetail.ets
 /**
  * 房源详情
  */
@@ -19,7 +20,10 @@ import { SupportList } from '../../view/roomDetail/SupportList'
 import { Book } from '../../view/roomDetail/Book'
 import { NavBar } from '../../view/roomDetail/NavBar'
 import { getUserHouses, UserHouse } from '../../store/UserHouseStore'
-import { PUBLIC_BASE_URL } from '../../common/utils/Request'   // ⭐ 使用静态资源前缀
+import { PUBLIC_BASE_URL } from '../../common/utils/Request'
+
+// ✅ 新增：足迹写入
+import { addFootprintApi } from '../../api/footprint'
 
 @Entry
 @Component
@@ -35,52 +39,28 @@ struct RoomDetail {
   @State isWantSee: boolean = false
 
   private makeLocalDetail(user: UserHouse): RoomDetailModel {
-    // 用本地发布的房源数据拼一个假的 RoomDetailModel
     return {
       id: user.id.toString(),
       address: user.address,
       houseTitle: user.title,
       rentArea: String(user.area),
-
-      // 价格：xxx 元/月
       rentPriceUnit: '元/月',
       rentPriceUnitListing: String(user.price),
-
-      // 本地房源图片，先存文件名，后面统一用 buildPicUrl 转成完整 URL
       housePicture: [
-        {
-          spaceName: '房源图片',
-          picList: [user.cover]
-        }
+        { spaceName: '房源图片', picList: [user.cover] }
       ],
-
-      // 标签随便给个「个人房源」
       tags: [{ name: '个人房源' }],
-
-      // 优惠信息先空
       discounts: [],
-
-      // 距离信息：本地没有就给个默认文案
-      distanceInfo: {
-        line: '',
-        name: '该房源附近暂无地铁信息',
-        distance: ''
-      },
-
-      // 基本信息
+      distanceInfo: { line: '', name: '该房源附近暂无地铁信息', distance: '' },
       metaInfo: [
         { name: '使用面积', desc: String(user.area) },
         { name: '朝向', desc: '南' },
         { name: '户型', desc: '1室1厅1卫' },
         { name: '楼层', desc: '1/1层' }
       ],
-
-      // 下面这几个列表先给空
       rentInfo: [],
       householdItem: [],
       support: [],
-
-      // 租住条款，随便给一些默认值
       rentTerm: {
         checkInTime: '随时入住',
         term: '租期可协商',
@@ -99,32 +79,28 @@ struct RoomDetail {
   }
 
   private buildPicUrl(raw: string): string {
-    if (!raw) {
-      return ''
-    }
-
+    if (!raw) return ''
     let s: string = raw.trim()
-
-    // 已经是完整 http/https 地址了，直接用
-    if (s.startsWith('http://') || s.startsWith('https://')) {
-      return s
-    }
-
-    // 去掉可能的 /public/ 前缀和开头的 /
+    if (s.startsWith('http://') || s.startsWith('https://')) return s
     s = s.replace(/^\/public\//, '').replace(/^\//, '')
-
-    // PUBLIC_BASE_URL 一般是形如 http://xxx:7000/public/
-    // 这里直接拼文件名即可
     return PUBLIC_BASE_URL + s
   }
 
-
   private toggleWantSee(): void {
     this.isWantSee = !this.isWantSee
-
     promptAction.showToast({
       message: this.isWantSee ? '已加入「想看」' : '已取消「想看」',
       duration: 2000
+    })
+  }
+
+  /** ✅ 新增：记录足迹（失败不影响详情页） */
+  private recordFootprint(houseId: string): void {
+    const userId: string = AppStorage.Has('userPhone') ? (AppStorage.Get('userPhone') as string) : ''
+    if (!userId || !houseId) return
+
+    addFootprintApi(userId, String(houseId)).catch(() => {
+      // 静默失败即可
     })
   }
 
@@ -138,9 +114,11 @@ struct RoomDetail {
     const userList = getUserHouses()
     const found = userList.find(u => u.id.toString() === idFromRoute)
 
+    // ✅ 本地房源：拼好 detail 后记录足迹（用 idFromRoute 就行）
     if (found) {
       this.isUserHouse = true
       this.userHouse = found
+
       const detail = this.makeLocalDetail(found)
 
       const localPics: HousePictureItem[] = detail.housePicture.map((hp: HousePictureItem) => {
@@ -154,9 +132,13 @@ struct RoomDetail {
       this.title = detail.houseTitle
       this.housePictureList = localPics
       this.rentTerm = detail.rentTerm
+
+      // ✅ 记录足迹（本地）
+      this.recordFootprint(String(idFromRoute))
       return
     }
 
+    // ✅ 远端房源：拿到详情后记录足迹（用 data.id 更准）
     getRoomDetailApi(idFromRoute).then((data: RoomDetailModel) => {
       console.info('[RoomDetail] detail = ' + JSON.stringify(data))
 
@@ -177,26 +159,28 @@ struct RoomDetail {
 
       this.housePictureList = mappedList
       this.rentTerm = data?.rentTerm ?? {} as RentTermItem
+
+      // ✅ 记录足迹（远端：以 data.id 为准）
+      if (this.houseId) {
+        this.recordFootprint(this.houseId)
+      } else {
+        this.recordFootprint(String(idFromRoute))
+      }
     })
   }
 
   private getCover(): string {
     const list: HousePictureItem[] = this.housePictureList ?? []
-    if (list.length === 0) {
-      return ''
-    }
+    if (list.length === 0) return ''
     const first: HousePictureItem = list[0]
     const pics: string[] = Array.isArray(first.picList) ? first.picList : []
     return pics.length > 0 ? pics[0] : ''
   }
 
-  // 拼价格文案：1100元/月
   private getPriceText(): string {
     const listing: string = this.room.rentPriceUnitListing ?? ''
     const unit: string = this.room.rentPriceUnit ?? ''
-    if (!listing && !unit) {
-      return ''
-    }
+    if (!listing && !unit) return ''
     return `${listing}${unit}`
   }
 
@@ -207,7 +191,6 @@ struct RoomDetail {
       Scroll() {
         Column() {
 
-          // 顶部大图轮播
           HousePictureList({ housePictureList: this.housePictureList })
 
           Column({ space: rvp(8) }) {
@@ -249,21 +232,15 @@ struct RoomDetail {
       .layoutWeight(1)
       .scrollBar(BarState.Off)
 
-      // ⭐ 底部预约 + 左下角想看
       Book({
         houseId: this.houseId,
-        // 标题：整租·华茂1958C区 1室1厅 南...
         title: this.room.houseTitle ?? '',
-        // 封面：用 getCover() 算
         cover: this.getCover(),
-        // 价格文案：用 getPriceText() 拼
         priceText: this.getPriceText(),
-        // 位置文案：直接用 address
         location: this.room.address ?? ''
       })
     }
     .height('100%')
     .width('100%')
   }
-
 }

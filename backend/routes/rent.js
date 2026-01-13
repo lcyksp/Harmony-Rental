@@ -320,6 +320,93 @@ router.post('/rent/confirm', async (req, res) => {
 
 /**
  * ===============================
+ * 3️⃣ 房东：取消/驳回出租（待确认）
+ * POST /auth/rent/reject
+ * body: { id, landlordPhone, reason? }
+ * ===============================
+ */
+/**
+ * ===============================
+ * 3️⃣ 房东：取消/驳回出租（待确认）
+ * POST /auth/rent/reject
+ * body: { id, landlordPhone, reason? }
+ * ===============================
+ */
+router.post('/rent/reject', async (req, res) => {
+  try {
+    const { id, landlordPhone, reason } = req.body || {}
+    if (!id || !landlordPhone) {
+      return res.status(400).json({ code: 400, message: '参数错误' })
+    }
+
+    const db = await getDB()
+
+    // 1) 查合同
+    const q = db.prepare(`SELECT * FROM rent_contract WHERE id = ?`)
+    q.bind([id])
+
+    if (!q.step()) {
+      q.free()
+      return res.status(404).json({ code: 404, message: '合同不存在' })
+    }
+
+    const row = q.getAsObject()
+    q.free()
+
+    // 2) 权限 + 状态校验：只能驳回 pending
+    if (row.landlord_phone !== landlordPhone) {
+      return res.status(403).json({ code: 403, message: '无权操作' })
+    }
+    if (row.status !== RENT_STATUS.PENDING) {
+      return res.status(400).json({ code: 400, message: '当前状态不可取消' })
+    }
+
+    // 3) 更新合同为 rejected（可写入备注 reason）
+    const now = Date.now()
+    const u = db.prepare(`
+      UPDATE rent_contract
+      SET status = ?, updated_at = ?, remark = ?
+      WHERE id = ?
+    `)
+    u.run([RENT_STATUS.REJECTED, now, reason || '', id])
+    u.free()
+
+    if (db.saveToDisk) db.saveToDisk()
+
+    // 4) 发消息（沿用你现有消息体系）
+    const { title, coverUrl } = getHouseSummary(db, row.house_id, req)
+    const extra = JSON.stringify({
+      houseId: row.house_id,
+      houseTitle: title,
+      coverUrl,
+      contractId: id
+    })
+
+    addMessage(
+      row.tenant_phone,
+      MESSAGE_TYPES.ORDER,
+      '出租申请已被取消',
+      `房源「${title || '房源'}」的租房申请已被房东取消`,
+      extra
+    )
+
+    addMessage(
+      landlordPhone,
+      MESSAGE_TYPES.ORDER,
+      '已取消出租',
+      `你已取消房源「${title || '房源'}」的租房申请`,
+      extra
+    )
+
+    return res.json({ code: 200, message: '已取消出租', data: null })
+  } catch (e) {
+    console.error('rent reject error:', e)
+    return res.status(500).json({ code: 500, message: 'Internal server error' })
+  }
+})
+
+/**
+ * ===============================
  * 4️⃣ 租客：我租到的（生效中）
  * GET /auth/rent/my-active?phone=xxx
  * ===============================
