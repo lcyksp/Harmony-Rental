@@ -1,4 +1,3 @@
-// entry/src/main/ets/pages/admin/AdminRoomManage.ets
 import { router } from '@kit.ArkUI'
 import promptAction from '@ohos.promptAction'
 import { NavBar } from '../../component/NavBar'
@@ -34,9 +33,23 @@ interface AdminRoomItemDynamic {
 struct AdminRoomManage {
   @State keyword: string = ''
   @State status: RoomStatusTab = 'all'
-  @State list: AdminRoomListItem[] = []
+
+  // 全量数据 & 当前渲染数据（分批）
+  @State allList: AdminRoomListItem[] = []
+  @State renderList: AdminRoomListItem[] = []
+
   @State loading: boolean = false
   @State refreshing: boolean = false
+
+  // Sticky + FAB
+  @State headerCollapsed: boolean = false
+  @State showFab: boolean = false
+  @State fabOpen: boolean = false
+
+  private scroller: Scroller = new Scroller()
+
+  private PAGE_SIZE: number = 20
+  private renderCount: number = 0
 
   private getToken(): string {
     return AppStorage.Has('token') ? (AppStorage.Get('token') as string) : ''
@@ -56,14 +69,37 @@ struct AdminRoomManage {
     this.load()
   }
 
+  aboutToDisappear(): void {
+    // 释放大数组引用，降低内存峰值
+    this.allList = []
+    this.renderList = []
+    this.fabOpen = false
+  }
+
+  private resetRender(list: AdminRoomListItem[]): void {
+    this.renderCount = this.PAGE_SIZE
+    this.allList = list
+    this.renderList = list.slice(0, this.renderCount)
+  }
+
+  private appendMore(): void {
+    if (this.renderCount >= this.allList.length) return
+    this.renderCount = this.renderCount + this.PAGE_SIZE
+    if (this.renderCount > this.allList.length) this.renderCount = this.allList.length
+    this.renderList = this.allList.slice(0, this.renderCount)
+  }
+
   private async load(): Promise<void> {
     const token: string = this.getToken()
     if (!this.refreshing) this.loading = true
+
     try {
       const data = await adminListRoomsApi(this.keyword, this.status, token)
-      this.list = data.list as AdminRoomListItem[]
+      const list: AdminRoomListItem[] = data.list as AdminRoomListItem[]
+      this.resetRender(list instanceof Array ? list : [])
     } catch (e) {
       promptAction.showToast({ message: '加载失败', duration: 2000 })
+      this.resetRender([])
     } finally {
       this.loading = false
       this.refreshing = false
@@ -111,16 +147,17 @@ struct AdminRoomManage {
     return '下架'
   }
 
-  private chipActive(tab: RoomStatusTab): boolean {
-    return this.status === tab
-  }
-
   private setTab(tab: RoomStatusTab): void {
     this.status = tab
+    this.scroller.scrollTo({ xOffset: 0, yOffset: 0 })
     this.load()
   }
 
-  // ---------------- 图片 URL：不写死 IP，复用 Request.ts 的 SERVER_URL ----------------
+  private headerHeight(): number {
+    return this.headerCollapsed ? rvp(128) : rvp(210)
+  }
+
+  // --------- 图片 URL：不写死 IP，统一用 SERVER_URL ---------
   private joinUrl(path: string): string {
     const p: string = (path || '').trim()
     if (p.length === 0) return ''
@@ -142,7 +179,7 @@ struct AdminRoomManage {
     return this.joinUrl(list[0])
   }
 
-  // coverUrl > imageUrl > housePicture(array) > housePicture(string)
+  // ✅ 安全封面选择：coverUrl > imageUrl > housePicture(array|string)
   private getCover(item: AdminRoomListItem): string {
     const dyn: AdminRoomItemDynamic = item as AdminRoomItemDynamic
 
@@ -150,46 +187,127 @@ struct AdminRoomManage {
     if (dyn.imageUrl && dyn.imageUrl.length > 0) return this.joinUrl(dyn.imageUrl)
 
     const hp: string | HousePicture | null | undefined = dyn.housePicture
-    if (hp instanceof Array) {
-      return this.pickFirstPicFromHousePicture(hp as HousePicture)
-    }
+    if (hp instanceof Array) return this.pickFirstPicFromHousePicture(hp as HousePicture)
     if (typeof hp === 'string' && hp.length > 0) return this.joinUrl(hp)
 
     return ''
   }
 
-  // ---------------- “华丽谢幕”UI 组件 ----------------
+  // --------- UI Builders（避免在 UI 里写 const） ---------
+  @Builder
+  private CoverView(cover: string) {
+    if (cover.length > 0) {
+      Image(cover)
+        .width(rvp(92))
+        .height(rvp(72))
+        .borderRadius(rvp(14))
+        .objectFit(ImageFit.Cover)
+        .backgroundColor('#F1F3F6')
+    } else {
+      Column() { Text('暂无图').fontSize(rvp(12)).fontColor('#888') }
+      .width(rvp(92))
+      .height(rvp(72))
+      .borderRadius(rvp(14))
+      .backgroundColor('#F1F3F6')
+      .justifyContent(FlexAlign.Center)
+      .alignItems(HorizontalAlign.Center)
+    }
+  }
 
   @Builder
-  private LuxuryHeader() {
-    // 氛围层：柔和“光斑”
-    Stack() {
-      // 背景底色
-      Column().width('100%').height(rvp(160)).backgroundColor('#F6F7FB')
+  private RoomCard(item: AdminRoomListItem, cover: string) {
+    Column() {
+      Row({ space: rvp(12) }) {
+        this.CoverView(cover)
 
-      // 左上光斑
+        Column({ space: rvp(6) }) {
+          Row() {
+            Text(item.houseTitle)
+              .fontSize(rvp(15))
+              .fontWeight(FontWeight.Medium)
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+              .layoutWeight(1)
+
+            Text(this.statusText(item.status))
+              .fontSize(rvp(11))
+              .fontColor(this.isOnline(item.status) ? '#0B8F4D' : '#8A5A00')
+              .padding({ left: rvp(10), right: rvp(10), top: rvp(5), bottom: rvp(5) })
+              .backgroundColor(this.isOnline(item.status) ? '#E7F7EE' : '#FFF2D8')
+              .borderRadius(rvp(999))
+          }
+
+          Text(`${item.rentPriceListing}${item.rentPriceUnit}  ·  ${item.address}`)
+            .fontSize(rvp(12))
+            .fontColor('#666')
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+
+          Text(`ID: ${item.id}`)
+            .fontSize(rvp(11))
+            .fontColor('#999')
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+
+          Row({ space: rvp(8) }) {
+            Text('编辑')
+              .fontSize(rvp(12))
+              .fontColor('#2F6BFF')
+              .padding({ left: rvp(12), right: rvp(12), top: rvp(7), bottom: rvp(7) })
+              .backgroundColor('#EEF3FF')
+              .borderRadius(rvp(999))
+              .onClick(() => this.goEdit(item.id))
+
+            Text(this.isOnline(item.status) ? '下架' : '上架')
+              .fontSize(rvp(12))
+              .fontColor(this.isOnline(item.status) ? '#8A5A00' : '#0B8F4D')
+              .padding({ left: rvp(12), right: rvp(12), top: rvp(7), bottom: rvp(7) })
+              .backgroundColor(this.isOnline(item.status) ? '#FFF2D8' : '#E7F7EE')
+              .borderRadius(rvp(999))
+              .onClick(() => this.setOnline(item.id, !this.isOnline(item.status)))
+
+            Text('删除')
+              .fontSize(rvp(12))
+              .fontColor('#E5484D')
+              .padding({ left: rvp(12), right: rvp(12), top: rvp(7), bottom: rvp(7) })
+              .backgroundColor('#FDECEE')
+              .borderRadius(rvp(999))
+              .onClick(() => this.removeRoom(item.id))
+          }
+        }
+        .layoutWeight(1)
+      }
+      .padding(rvp(12))
+    }
+    .backgroundColor('#FFFFFF')
+    .borderRadius(rvp(18))
+    .shadow({ radius: rvp(16), color: '#12000000', offsetX: 0, offsetY: rvp(10) })
+    .margin({ left: rvp(12), right: rvp(12), top: rvp(10) })
+  }
+
+  @Builder
+  private StickyHeader() {
+    Stack() {
+      Column().width('100%').height(this.headerHeight()).backgroundColor('#F6F7FB')
+
       Column()
         .width(rvp(220)).height(rvp(220))
         .borderRadius(rvp(999))
         .backgroundColor('#2F6BFF')
         .opacity(0.10)
-        .position({ x: rvp(-80), y: rvp(-120) })
+        .position({ x: rvp(-90), y: rvp(-130) })
 
-      // 右上光斑
       Column()
         .width(rvp(240)).height(rvp(240))
         .borderRadius(rvp(999))
         .backgroundColor('#45B97C')
         .opacity(0.10)
-        .position({ x: rvp(220), y: rvp(-140) })
+        .position({ x: rvp(220), y: rvp(-150) })
 
-      // 内容层
-      Column({ space: rvp(10) }) {
-        // 你已有 NavBar（你这版 UI 已经很稳），保留
+      Column({ space: this.headerCollapsed ? rvp(8) : rvp(12) }) {
         NavBar({ title: '房源管理' })
 
         Row({ space: rvp(10) }) {
-          // 搜索胶囊
           Row({ space: rvp(8) }) {
             TextInput({ text: this.keyword, placeholder: '搜索标题 / 地址 / ID' })
               .layoutWeight(1)
@@ -203,7 +321,10 @@ struct AdminRoomManage {
               .padding({ left: rvp(14), right: rvp(14), top: rvp(8), bottom: rvp(8) })
               .backgroundColor('#2F6BFF')
               .borderRadius(rvp(999))
-              .onClick(() => this.load())
+              .onClick(() => {
+                this.scroller.scrollTo({ xOffset: 0, yOffset: 0 })
+                this.load()
+              })
           }
           .padding({ left: rvp(14), right: rvp(10), top: rvp(10), bottom: rvp(10) })
           .backgroundColor('#FFFFFF')
@@ -211,7 +332,6 @@ struct AdminRoomManage {
           .shadow({ radius: rvp(14), color: '#14000000', offsetX: 0, offsetY: rvp(8) })
           .layoutWeight(1)
 
-          // 刷新按钮
           Text(this.loading ? '...' : '刷新')
             .fontSize(rvp(13))
             .fontColor('#2F6BFF')
@@ -223,16 +343,15 @@ struct AdminRoomManage {
         }
         .padding({ left: rvp(12), right: rvp(12) })
 
-        // 分段筛选（更高级：胶囊分段）
         Row({ space: rvp(6) }) {
           ForEach(['all', 'online', 'offline'] as RoomStatusTab[], (t: RoomStatusTab) => {
             Text(this.chipText(t))
               .fontSize(rvp(13))
-              .fontColor(this.chipActive(t) ? '#FFFFFF' : '#222222')
+              .fontColor(this.status === t ? '#FFFFFF' : '#222222')
               .padding({ left: rvp(18), right: rvp(18), top: rvp(10), bottom: rvp(10) })
-              .backgroundColor(this.chipActive(t) ? '#2F6BFF' : '#FFFFFF')
+              .backgroundColor(this.status === t ? '#2F6BFF' : '#FFFFFF')
               .borderRadius(rvp(999))
-              .shadow(this.chipActive(t)
+              .shadow(this.status === t
                 ? { radius: rvp(10), color: '#1A2F6BFF', offsetX: 0, offsetY: rvp(6) }
                 : { radius: rvp(10), color: '#0C000000', offsetX: 0, offsetY: rvp(4) }
               )
@@ -244,164 +363,110 @@ struct AdminRoomManage {
       .padding({ top: rvp(10) })
     }
     .width('100%')
-    .height(rvp(200))
+    .height(this.headerHeight())
   }
 
   @Builder
-  private EmptyState() {
-    Column({ space: rvp(8) }) {
-      Text('暂无房源')
-        .fontSize(rvp(16))
-        .fontColor('#222')
-        .fontWeight(FontWeight.Medium)
+  private FloatingFab() {
+    if (this.showFab) {
+      Column({ space: rvp(10) }) {
+        if (this.fabOpen) {
+          Column({ space: rvp(10) }) {
+            Text('回顶')
+              .fontSize(rvp(12))
+              .fontColor('#2F6BFF')
+              .padding({ left: rvp(14), right: rvp(14), top: rvp(10), bottom: rvp(10) })
+              .backgroundColor('#FFFFFF')
+              .borderRadius(rvp(999))
+              .shadow({ radius: rvp(14), color: '#14000000', offsetX: 0, offsetY: rvp(8) })
+              .onClick(() => {
+                this.fabOpen = false
+                this.scroller.scrollTo({ xOffset: 0, yOffset: 0 })
+              })
 
-      Text('换个关键词试试，或者点击“刷新”重新加载')
-        .fontSize(rvp(12))
-        .fontColor('#888')
-    }
-    .width('100%')
-    .height('100%')
-    .justifyContent(FlexAlign.Center)
-    .alignItems(HorizontalAlign.Center)
-  }
-
-  @Builder
-  private SkeletonList() {
-    // 轻量骨架屏（不依赖任何库）
-    Column() {
-      ForEach([0, 1, 2, 3, 4], (i: number) => {
-        Row({ space: rvp(12) }) {
-          Column()
-            .width(rvp(92)).height(rvp(72))
-            .borderRadius(rvp(12))
-            .backgroundColor('#ECEFF4')
-
-          Column({ space: rvp(8) }) {
-            Column().width('75%').height(rvp(12)).borderRadius(rvp(6)).backgroundColor('#ECEFF4')
-            Column().width('60%').height(rvp(10)).borderRadius(rvp(6)).backgroundColor('#ECEFF4')
-            Column().width('40%').height(rvp(10)).borderRadius(rvp(6)).backgroundColor('#ECEFF4')
-          }.layoutWeight(1)
+            Text('刷新')
+              .fontSize(rvp(12))
+              .fontColor('#0B8F4D')
+              .padding({ left: rvp(14), right: rvp(14), top: rvp(10), bottom: rvp(10) })
+              .backgroundColor('#FFFFFF')
+              .borderRadius(rvp(999))
+              .shadow({ radius: rvp(14), color: '#14000000', offsetX: 0, offsetY: rvp(8) })
+              .onClick(() => {
+                this.fabOpen = false
+                this.load()
+              })
+          }
+          .alignItems(HorizontalAlign.End)
         }
-        .padding(rvp(12))
-        .backgroundColor('#FFFFFF')
-        .borderRadius(rvp(16))
-        .shadow({ radius: rvp(14), color: '#12000000', offsetX: 0, offsetY: rvp(8) })
-        .margin({ left: rvp(12), right: rvp(12), top: rvp(10) })
-      })
-      Blank().height(rvp(18))
+
+        Text(this.fabOpen ? '×' : '+')
+          .fontSize(rvp(20))
+          .fontWeight(FontWeight.Bold)
+          .fontColor('#FFFFFF')
+          .width(rvp(52))
+          .height(rvp(52))
+          .textAlign(TextAlign.Center)
+          .backgroundColor('#2F6BFF')
+          .borderRadius(rvp(999))
+          .shadow({ radius: rvp(18), color: '#2A2F6BFF', offsetX: 0, offsetY: rvp(10) })
+          .onClick(() => { this.fabOpen = !this.fabOpen })
+      }
+      .position({ x: '82%', y: '80%' })
+      .zIndex(99)
     }
   }
 
   build() {
-    Column() {
-      // 顶部“华丽”头部
-      this.LuxuryHeader()
-
-      // 主体：支持下拉刷新
+    Stack() {
       Refresh({ refreshing: this.refreshing, offset: rvp(90), friction: 0.75 }) {
-        Column() {
+        List({ scroller: this.scroller }) {
+          // ✅ 关键修复：不要在 ListItem 里直接写 Blank（会报错）
+          ListItem() { Column().height(this.headerHeight()) }
+
           if (this.loading && !this.refreshing) {
-            this.SkeletonList()
-          } else if (this.list.length === 0) {
-            this.EmptyState()
-          } else {
-            List() {
-              ForEach(this.list, (item: AdminRoomListItem) => {
-                ListItem() {
-                  Column() {
-                    Row({ space: rvp(12) }) {
-
-                      // 这里不写 const/let，避免 “Only UI component syntax...”
-                      if (this.getCover(item).length > 0) {
-                        Image(this.getCover(item))
-                          .width(rvp(92))
-                          .height(rvp(72))
-                          .borderRadius(rvp(14))
-                          .objectFit(ImageFit.Cover)
-                          .backgroundColor('#F1F3F6')
-                      } else {
-                        Column() { Text('暂无图').fontSize(rvp(12)).fontColor('#888') }
-                        .width(rvp(92))
-                        .height(rvp(72))
-                        .borderRadius(rvp(14))
-                        .backgroundColor('#F1F3F6')
-                        .justifyContent(FlexAlign.Center)
-                        .alignItems(HorizontalAlign.Center)
-                      }
-
-                      Column({ space: rvp(6) }) {
-                        Row() {
-                          Text(item.houseTitle)
-                            .fontSize(rvp(15))
-                            .fontWeight(FontWeight.Medium)
-                            .maxLines(1)
-                            .textOverflow({ overflow: TextOverflow.Ellipsis })
-                            .layoutWeight(1)
-
-                          // 状态徽章更“高级”
-                          Text(this.statusText(item.status))
-                            .fontSize(rvp(11))
-                            .fontColor(this.isOnline(item.status) ? '#0B8F4D' : '#8A5A00')
-                            .padding({ left: rvp(10), right: rvp(10), top: rvp(5), bottom: rvp(5) })
-                            .backgroundColor(this.isOnline(item.status) ? '#E7F7EE' : '#FFF2D8')
-                            .borderRadius(rvp(999))
-                        }
-
-                        Text(`${item.rentPriceListing}${item.rentPriceUnit}  ·  ${item.address}`)
-                          .fontSize(rvp(12))
-                          .fontColor('#666')
-                          .maxLines(1)
-                          .textOverflow({ overflow: TextOverflow.Ellipsis })
-
-                        Text(`ID: ${item.id}`)
-                          .fontSize(rvp(11))
-                          .fontColor('#999')
-                          .maxLines(1)
-                          .textOverflow({ overflow: TextOverflow.Ellipsis })
-
-                        // 操作按钮：更精致的小胶囊
-                        Row({ space: rvp(8) }) {
-                          Text('编辑')
-                            .fontSize(rvp(12))
-                            .fontColor('#2F6BFF')
-                            .padding({ left: rvp(12), right: rvp(12), top: rvp(7), bottom: rvp(7) })
-                            .backgroundColor('#EEF3FF')
-                            .borderRadius(rvp(999))
-                            .onClick(() => this.goEdit(item.id))
-
-                          Text(this.isOnline(item.status) ? '下架' : '上架')
-                            .fontSize(rvp(12))
-                            .fontColor(this.isOnline(item.status) ? '#8A5A00' : '#0B8F4D')
-                            .padding({ left: rvp(12), right: rvp(12), top: rvp(7), bottom: rvp(7) })
-                            .backgroundColor(this.isOnline(item.status) ? '#FFF2D8' : '#E7F7EE')
-                            .borderRadius(rvp(999))
-                            .onClick(() => this.setOnline(item.id, !this.isOnline(item.status)))
-
-                          Text('删除')
-                            .fontSize(rvp(12))
-                            .fontColor('#E5484D')
-                            .padding({ left: rvp(12), right: rvp(12), top: rvp(7), bottom: rvp(7) })
-                            .backgroundColor('#FDECEE')
-                            .borderRadius(rvp(999))
-                            .onClick(() => this.removeRoom(item.id))
-                        }
-                      }
-                      .layoutWeight(1)
-                    }
-                    .padding(rvp(12))
-                  }
-                  .backgroundColor('#FFFFFF')
-                  .borderRadius(rvp(18))
-                  .shadow({ radius: rvp(16), color: '#12000000', offsetX: 0, offsetY: rvp(10) })
-                  .margin({ left: rvp(12), right: rvp(12), top: rvp(10) })
-                }
-              }, (it: AdminRoomListItem) => it.id)
+            ListItem() {
+              Column() {
+                Text('加载中…').fontSize(rvp(14)).fontColor('#777').margin({ top: rvp(16) })
+              }
+              .width('100%')
+              .height(rvp(180))
+              .alignItems(HorizontalAlign.Center)
+              .justifyContent(FlexAlign.Center)
             }
-            Blank().height(rvp(18))
+          } else if (this.renderList.length === 0) {
+            ListItem() {
+              Column({ space: rvp(8) }) {
+                Text('暂无房源').fontSize(rvp(16)).fontColor('#222').fontWeight(FontWeight.Medium)
+                Text('换个关键词试试，或者点击“刷新”重新加载').fontSize(rvp(12)).fontColor('#888')
+              }
+              .width('100%')
+              .height(rvp(420))
+              .justifyContent(FlexAlign.Center)
+              .alignItems(HorizontalAlign.Center)
+            }
+          } else {
+            ForEach(this.renderList, (item: AdminRoomListItem) => {
+              ListItem() {
+                this.RoomCard(item, this.getCover(item))
+              }
+            }, (it: AdminRoomListItem) => it.id)
           }
+
+          // ✅ 同样别直接 Blank：用空 Column 占位
+          ListItem() { Column().height(rvp(24)) }
         }
         .width('100%')
+        .height('100%')
         .backgroundColor('#F6F7FB')
+        .scrollBar(BarState.Off)
+        .onScroll((x: number, y: number) => {
+          this.headerCollapsed = y > rvp(60)
+          this.showFab = y > rvp(220)
+          if (!this.showFab) this.fabOpen = false
+        })
+        .onReachEnd(() => {
+          this.appendMore()
+        })
       }
       .onStateChange((state: RefreshStatus) => {
         if (state === RefreshStatus.Refresh) {
@@ -409,6 +474,9 @@ struct AdminRoomManage {
           this.load()
         }
       })
+
+      this.StickyHeader()
+      this.FloatingFab()
     }
     .width('100%')
     .height('100%')
