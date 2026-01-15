@@ -8,6 +8,7 @@ class UserInfo {
   id: number = 0;
   nickname: string = '';
   phone: string = '';
+  role?: string = 'user'
 }
 
 @Entry
@@ -42,15 +43,30 @@ struct LoginPhone {
     return /^[0-9]{6}$/.test(pwd);
   }
 
+  // ✅ 方案A：管理员账号固定为 admin
+  private isAdminAccount(): boolean {
+    return (this.phone || '').trim() === 'admin'
+  }
+
+  private getCanLogin(): boolean {
+    if (!this.isChecked) return false
+    if (!this.isValidPassword) return false
+    // ✅ 允许手机号或 admin
+    return this.isValidPhone || this.isAdminAccount()
+  }
+
   private async doLogin() {
     if (!this.isChecked) {
       promptAction.showToast({ message: '请先同意《用户协议》和《隐私政策》' });
       return;
     }
-    if (!this.isValidPhone) {
-      promptAction.showToast({ message: '请输入正确的手机号' });
+
+    // ✅ 允许手机号或 admin
+    if (!this.isValidPhone && !this.isAdminAccount()) {
+      promptAction.showToast({ message: '请输入正确的手机号或管理员账号 admin' });
       return;
     }
+
     if (!this.isValidPassword) {
       promptAction.showToast({ message: '请输入 6 位数字密码' });
       return;
@@ -59,21 +75,35 @@ struct LoginPhone {
     try {
       const data: LoginPwdData = await loginByPwdApi(this.phone, this.password);
 
-      console.log('[LoginPhone] 登录成功 this.phone = ' + this.phone);
+      console.log('[LoginPhone] 登录成功 account = ' + this.phone);
 
-      // ⭐ StorageLink 自动刷新应用全局 token
+      // 全局 token
       this.token = data.token;
 
-      // ⭐⭐ 关键修复 1：强制覆盖 AppStorage（不能再用 setOrCreate）
-      AppStorage.set('user', data.user);
-      AppStorage.set('userPhone', data.user.phone);
-      AppStorage.set('userId', String(data.user.id));
+      const role: string = (data.user as UserInfo).role ?? 'user'
 
-      // ⭐⭐ 关键修复 2（你之前写成 SetOrCreate，这是错的）
-      // AppStorage.SetOrCreate('userId', ...) ← 这是无效语法！！！ArkTS 没有这个方法
+      // 覆盖 AppStorage
+      AppStorage.SetOrCreate('user', data.user)
+      AppStorage.SetOrCreate('userPhone', data.user.phone)
+      AppStorage.SetOrCreate('userId', String(data.user.id))
+      AppStorage.SetOrCreate('userRole', role)
+      AppStorage.SetOrCreate('token', data.token)
+
+      // ✅ 如果输入的是 admin，但后端返回不是 admin，直接拦住（防止普通人乱用 admin 入口）
+      if (this.isAdminAccount() && role !== 'admin') {
+        promptAction.showToast({ message: '不是管理员账号' });
+        return;
+      }
 
       promptAction.showToast({ message: '登录成功' });
 
+      // ✅ 管理员跳管理页
+      if (role === 'admin') {
+        router.replaceUrl({ url: 'pages/admin/AdminHome' })
+        return
+      }
+
+      // 普通用户按原逻辑跳转
       if (this.redirectUrl && this.redirectUrl.length > 0) {
         router.replaceUrl({
           url: this.redirectUrl,
@@ -84,13 +114,20 @@ struct LoginPhone {
       }
 
     } catch (err) {
-      console.log('loginByPwdApi error');
+      console.log('loginByPwdApi error: ', JSON.stringify(err))
+      promptAction.showToast({ message: '登录失败，请检查账号密码' });
     }
   }
 
   private goRegister() {
     if (!this.isChecked) {
       promptAction.showToast({ message: '请先同意《用户协议》和《隐私政策》' });
+      return;
+    }
+
+    // ✅ 方案A：如果输入 admin，不允许走注册/找回
+    if (this.isAdminAccount()) {
+      promptAction.showToast({ message: '管理员账号不支持此入口' });
       return;
     }
 
@@ -106,10 +143,10 @@ struct LoginPhone {
 
   build() {
     Column() {
-      NavBar({ title: '手机号登录' })
+      NavBar({ title: '账号登录' })
 
       Column({ space: rvp(16) }) {
-        // 手机号
+        // 账号/手机号
         Stack() {
           TextInput({ placeholder: '请输入手机号' })
             .backgroundColor('rgba(0,0,0,0)')
@@ -127,7 +164,7 @@ struct LoginPhone {
             .width(rvp(12))
             .height(rvp(8))
             .objectFit(ImageFit.Fill)
-            .visibility(this.isValidPhone ? Visibility.Visible : Visibility.Hidden)
+            .visibility((this.isValidPhone || this.isAdminAccount()) ? Visibility.Visible : Visibility.Hidden)
         }
         .alignContent(Alignment.End)
 
@@ -180,8 +217,9 @@ struct LoginPhone {
           .alignSelf(ItemAlign.Center)
           .backgroundColor('#8FE1A2')
           .fontSize(rvp(16))
-          .enabled(this.isChecked && this.isValidPhone && this.isValidPassword)
+          .enabled(this.getCanLogin())
 
+        // 注册/找回（输入 admin 时会在 goRegister 里拦住）
         Button('注册/找回密码')
           .onClick(() => this.goRegister())
           .width('80%')

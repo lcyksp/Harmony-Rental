@@ -12,6 +12,7 @@ import footprintRouter from './routes/footprint.js'
 import reservationsRouter from './routes/reservations.js';
 import messagesRouter from './routes/messages.js'
 import regionRouter from './routes/region.js'
+import adminRouter from './routes/admin.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -124,6 +125,9 @@ app.use('/auth', footprintRouter)
 //定位
 app.use('/region', regionRouter)
 console.log('[app] /region router mounted ✅')
+
+//管理员
+app.use('/api/admin', adminRouter);
 
 app.use((req, res) => {
   console.log(`[404] ${req.method} ${req.originalUrl}`)

@@ -8,6 +8,7 @@ const DB_FILE = path.join(process.cwd(), 'sqlite.db');
 let dbPromise = null;
 
 export async function getDB() {
+  console.log('[DB_FILE]=', DB_FILE)
   if (!dbPromise) {
     dbPromise = (async () => {
       const SQL = await initSqlJs({

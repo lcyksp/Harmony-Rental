@@ -74,6 +74,7 @@ export interface LoginPwdUser {
   phone: string;
   nickname: string;
   avatar?: string;
+  role?: string;
 }
 
 // ② 再在 data 里引用这个类型

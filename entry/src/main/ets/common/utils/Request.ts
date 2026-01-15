@@ -32,6 +32,17 @@ instance.interceptors.request.use(
       'data =',
       JSON.stringify(config.data || {}),
     )
+    // ✅ 自动注入登录 token（管理员接口也会自动带上）
+    const token: string = AppStorage.Has('token') ? (AppStorage.Get('token') as string) : ''
+    if (token && token.length > 0) {
+      if (!config.headers) {
+        config.headers = {}
+      }
+      if (!config.headers.Authorization) {
+        config.headers.Authorization = `Bearer ${token}`
+      }
+    }
+
     return config
   },
   (error: any) => {
@@ -79,20 +90,20 @@ instance.interceptors.response.use(
 )
 
 class Request {
-  get<T>(url: string, params?: AnyObject) {
-    return instance.get<any, T>(url, { params })
+  get<T>(url: string, params?: AnyObject, config?: AnyObject) {
+    return instance.get<any, T>(url, { params, ...(config || {}) })
   }
 
-  post<T>(url: string, data?: AnyObject) {
-    return instance.post<any, T>(url, data)
+  post<T>(url: string, data?: AnyObject, config?: AnyObject) {
+    return instance.post<any, T>(url, data, config || {})
   }
 
-  put<T>(url: string, data?: AnyObject) {
-    return instance.put<any, T>(url, data)
+  put<T>(url: string, data?: AnyObject, config?: AnyObject) {
+    return instance.put<any, T>(url, data, config || {})
   }
 
-  delete<T>(url: string, params?: AnyObject) {
-    return instance.delete<any, T>(url, { params })
+  delete<T>(url: string, params?: AnyObject, config?: AnyObject) {
+    return instance.delete<any, T>(url, { params, ...(config || {}) })
   }
 }
 
