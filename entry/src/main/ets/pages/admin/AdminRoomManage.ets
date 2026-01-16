@@ -417,7 +417,7 @@ struct AdminRoomManage {
   }
 
   build() {
-    Stack() {
+    Stack({ alignContent: Alignment.TopStart }) {
       Refresh({ refreshing: this.refreshing, offset: rvp(90), friction: 0.75 }) {
         List({ scroller: this.scroller }) {
           // ✅ 关键修复：不要在 ListItem 里直接写 Blank（会报错）
