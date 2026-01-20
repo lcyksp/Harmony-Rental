@@ -129,7 +129,7 @@ function setHouseRentStatus(db, houseId, status, activeContractId = null) {
 
 /**
  * ===============================
- * 1️⃣ 租客：我要租 / 就要这间了
+ * 租客：我要租 / 就要这间了
  * POST /auth/rent/create
  * ===============================
  */
@@ -147,7 +147,7 @@ router.post('/rent/create', async (req, res) => {
       return res.status(400).json({ code: 400, message: '未找到房东信息' })
     }
 
-    // ✅ 允许多人/多次下订：不做防重复拦截
+    //允许多人/多次下订：不做防重复拦截
 
     const now = Date.now()
 
@@ -179,7 +179,7 @@ router.post('/rent/create', async (req, res) => {
       coverUrl
     })
 
-    // 🔔 给房东发消息（红点来源）
+    //给房东发消息（红点来源）
     addMessage(
       landlordPhone,
       MESSAGE_TYPES.ORDER,
@@ -206,7 +206,7 @@ router.post('/rent/create', async (req, res) => {
 
 /**
  * ===============================
- * 2️⃣ 房东：我租出的（全部）
+ * 房东：我租出的（全部）
  * GET /auth/rent/landlord-list?phone=xxx
  * ===============================
  */
@@ -219,7 +219,7 @@ router.get('/rent/landlord-list', async (req, res) => {
     }
 
     const db = await getDB()
-    // ✅ 可选 status 过滤（方便前端 tab 精确查询）
+    // 可选 status 过滤（方便前端 tab 精确查询）
     const sql = status
       ? `SELECT * FROM rent_contract WHERE landlord_phone = ? AND status = ? ORDER BY created_at DESC`
       : `SELECT * FROM rent_contract WHERE landlord_phone = ? ORDER BY created_at DESC`
@@ -234,7 +234,7 @@ router.get('/rent/landlord-list', async (req, res) => {
 
       list.push({
         ...row,
-        // ✅ 兼容前端 camelCase
+        //兼容前端 camelCase
         houseId: row.house_id,
         tenantPhone: row.tenant_phone,
         landlordPhone: row.landlord_phone,
@@ -278,7 +278,7 @@ router.post('/rent/confirm', async (req, res) => {
       return res.status(403).json({ code: 403, message: '无权操作' })
     }
 
-    // ✅ 合租模式：不检查 house_info.data.rentStatus
+    //合租模式：不检查 house_info.data.rentStatus
 
     // 3) 更新合同为 active
     const now = Date.now()
@@ -290,7 +290,7 @@ router.post('/rent/confirm', async (req, res) => {
     u.run([RENT_STATUS.ACTIVE, now, id])
     u.free()
 
-    // ✅ 合租模式：不修改 house_info 的 rentStatus
+    //合租模式：不修改 house_info 的 rentStatus
 
     if (db.saveToDisk) db.saveToDisk()
 
@@ -320,14 +320,14 @@ router.post('/rent/confirm', async (req, res) => {
 
 /**
  * ===============================
- * 3️⃣ 房东：取消/驳回出租（待确认）
+ * 房东：取消/驳回出租（待确认）
  * POST /auth/rent/reject
  * body: { id, landlordPhone, reason? }
  * ===============================
  */
 /**
  * ===============================
- * 3️⃣ 房东：取消/驳回出租（待确认）
+ * 房东：取消/驳回出租（待确认）
  * POST /auth/rent/reject
  * body: { id, landlordPhone, reason? }
  * ===============================
@@ -407,7 +407,7 @@ router.post('/rent/reject', async (req, res) => {
 
 /**
  * ===============================
- * 4️⃣ 租客：我租到的（生效中）
+ * 租客：我租到的（生效中）
  * GET /auth/rent/my-active?phone=xxx
  * ===============================
  */
@@ -434,7 +434,7 @@ router.get('/rent/my-active', async (req, res) => {
       const { title, coverUrl } = getHouseSummary(db, row.house_id, req)
       list.push({
         ...row,
-        // ✅ 兼容前端 camelCase
+        //兼容前端 camelCase
         houseId: row.house_id,
         tenantPhone: row.tenant_phone,
         landlordPhone: row.landlord_phone,
@@ -455,7 +455,7 @@ router.get('/rent/my-active', async (req, res) => {
 
 /**
  * ===============================
- * 5️⃣ 租客：申请退租
+ * 租客：申请退租
  * POST /auth/rent/quit/apply
  * ===============================
  */
@@ -510,7 +510,7 @@ router.post('/rent/quit/apply', async (req, res) => {
 
 /**
  * ===============================
- * 6️⃣ 房东：同意退租
+ * 房东：同意退租
  * POST /auth/rent/quit/confirm
  * ===============================
  */
@@ -546,7 +546,7 @@ router.post('/rent/quit/confirm', async (req, res) => {
     u.run([RENT_STATUS.ENDED, now, id])
     u.free()
 
-    // ✅ 合租模式：退租不修改 house_info 的 rentStatus
+    //合租模式：退租不修改 house_info 的 rentStatus
 
     if (db.saveToDisk) db.saveToDisk()
 
@@ -567,7 +567,7 @@ router.post('/rent/quit/confirm', async (req, res) => {
 
 /**
  * ===============================
- * 7️⃣ 房东：驳回退租
+ * 房东：驳回退租
  * POST /auth/rent/quit/reject
  * ===============================
  */

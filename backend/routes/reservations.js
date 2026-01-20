@@ -2,7 +2,7 @@
 import express from 'express'
 import { getDB } from '../db.js'
 import { addMessage, MESSAGE_TYPES } from './messages.js'
-import { getHost } from '../utils/getHost.js'  // ✅ 新增：自动获取 http(s)://host
+import { getHost } from '../utils/getHost.js'  //新增：自动获取 http(s)://host
 
 const router = express.Router()
 
@@ -62,7 +62,7 @@ async function getLandlordPhoneByHouseId(db, houseId) {
 
 /**
  * 获取房源标题 & 封面图
- * ✅ 改动：传入 req，把 /public/xxx.jpg 统一拼成绝对地址
+ * 改动：传入 req，把 /public/xxx.jpg 统一拼成绝对地址
  */
 function getHouseSummary(db, houseId, req) {
   try {
@@ -121,7 +121,7 @@ function getHouseSummary(db, houseId, req) {
           ? firstPic
           : '/public/' + firstPic.replace(/^\//, '')
 
-        // ✅ 关键：拼成绝对地址
+        //关键：拼成绝对地址
         coverUrl = req ? (getHost(req) + publicPath) : publicPath
       }
     }
@@ -177,7 +177,7 @@ router.post('/reservation', async (req, res) => {
       landlordPhone = await getLandlordPhoneByHouseId(db, roomId)
     }
 
-    // 房源摘要 ✅ 传入 req
+    // 房源摘要传入 req
     const { title: houseTitle, coverUrl } = getHouseSummary(db, roomId, req)
     const remarkText = remark ? `备注：${remark}` : '备注：无'
 
@@ -248,10 +248,10 @@ router.get('/reservation/list', async (req, res) => {
     while (stmt.step()) {
       const row = stmt.getAsObject()
 
-      // ✅ 封面/标题（绝对地址）
+      //封面/标题（绝对地址）
       const { title: houseTitle, coverUrl } = getHouseSummary(db, row.houseId, req)
 
-      // ✅ 房东电话：租客端用于双向联系
+      //房东电话：租客端用于双向联系
       const landlordPhone = await getLandlordPhoneByHouseId(db, row.houseId)
 
       list.push({
@@ -310,7 +310,7 @@ router.get('/reservation/landlord-list', async (req, res) => {
         continue
       }
 
-      // ✅ 传入 req，使 coverUrl 变成绝对地址
+      //传入 req，使 coverUrl 变成绝对地址
       const { title: houseTitle, coverUrl } = getHouseSummary(db, row.houseId, req)
 
       list.push({

@@ -35,7 +35,7 @@ function matchRegion(detail, { provinceCode, cityCode, districtCode }) {
   const dCity = normStr(detail.cityCode || detail.city_code)
   const dDistrict = normStr(detail.districtCode || detail.district_code || detail.areaCode || detail.area_code)
 
-  // ✅ 区优先
+  //区优先
   if (districtCode) return dDistrict === districtCode
   if (cityCode) return dCity === cityCode
   if (provinceCode) return dProvince === provinceCode
@@ -72,7 +72,7 @@ router.get('/nearbyHouses', async (req, res) => {
         detail = {}
       }
 
-      // ✅ 按区/市/省过滤
+      //按区/市/省过滤
       if (!matchRegion(detail, { provinceCode, cityCode, districtCode })) {
         continue
       }

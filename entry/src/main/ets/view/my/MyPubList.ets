@@ -25,7 +25,7 @@ interface UserInfo {
 @Component
 struct MyPubList {
   @StorageProp('topRectHeight') topRectHeight: number = 0
-  @StorageProp('token') token: string = '' // ✅ token 优先
+  @StorageProp('token') token: string = '' //  token 优先
 
   @State currentTab: number = 0 // 0=已上架, 1=已下架, 2=全部
   @State list: SimpleRoom[] = []
@@ -149,7 +149,7 @@ struct MyPubList {
 
   @Builder
   private RoomCard(item: SimpleRoom) {
-    // ✅ 关键：只让“左侧内容区”可点击进详情，右侧按钮区不绑定进详情
+    //关键：只让“左侧内容区”可点击进详情，右侧按钮区不绑定进详情
     Row() {
       // 左侧内容区（可点）
       Row() {
@@ -184,7 +184,7 @@ struct MyPubList {
         .alignItems(HorizontalAlign.Start)
       }
       .layoutWeight(1)
-      .onClick(() => this.goDetail(item.id)) // ✅ 点左侧进详情
+      .onClick(() => this.goDetail(item.id)) //点左侧进详情
 
       // 右侧按钮区（只做上下架）
       Column() {
@@ -236,7 +236,7 @@ struct MyPubList {
     }
     .layoutWeight(1)
     .alignItems(HorizontalAlign.Center)
-    .padding({ top: rvp(6), bottom: rvp(6) }) // ✅ 热区大一点更好点
+    .padding({ top: rvp(6), bottom: rvp(6) }) //热区大一点更好点
     .onClick(() => this.currentTab = index)
   }
 
@@ -259,7 +259,7 @@ struct MyPubList {
       .padding({ left: rvp(16), right: rvp(16), top: this.topRectHeight + rvp(10), bottom: rvp(10) })
       .backgroundColor('#FFFFFF')
 
-      // ✅ Tab 三个都能点
+      //Tab 三个都能点
       Row() {
         this.TabItem('已上架', 0)
         this.TabItem('已下架', 1)

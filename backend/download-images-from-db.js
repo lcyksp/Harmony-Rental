@@ -84,7 +84,7 @@ async function main() {
       }
     }
 
-    console.log('✅ 所有图片下载流程结束，请查看 backend/public 目录。');
+    console.log('所有图片下载流程结束，请查看 backend/public 目录。');
   } catch (err) {
     console.error('脚本运行失败:', err.message);
   }

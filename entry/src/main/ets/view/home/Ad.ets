@@ -1,7 +1,7 @@
 // entry/src/main/ets/view/home/Ad.ets
 import { rvp } from '../../common/utils/DeviceScreen'
 import { router } from '@kit.ArkUI'
-import promptAction from '@ohos.promptAction'  // ⭐ 用来弹 toast 看点击有没有触发
+import promptAction from '@ohos.promptAction'  //用来弹 toast 看点击有没有触发
 
 @Component
 export struct Ad {
@@ -52,13 +52,13 @@ export struct Ad {
 
             try {
               router.pushUrl({
-                // ⭐【关键】这里的 url 必须和 module.json5 里的页面路径一模一样
+                //【关键】这里的 url 必须和 module.json5 里的页面路径一模一样
                 // 例如 module.json5 里写的是 "src/main/ets/pages/publish/PublishHouse"
                 // 那这里就要写 'pages/publish/PublishHouse'
                 url: 'pages/PublishHouse'
               })
             } catch (err) {
-              // ⭐ 如果路由失败，会在日志里看到具体原因
+              // 如果路由失败，会在日志里看到具体原因
               console.error('[Ad] router.pushUrl error = ' + JSON.stringify(err))
               promptAction.showToast({ message: '跳转失败，请检查路由配置' })
             }

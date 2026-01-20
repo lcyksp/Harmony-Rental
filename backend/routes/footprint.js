@@ -17,7 +17,7 @@ function getTableColumns(db, tableName) {
 }
 
 /**
- * ✅ 确保 footprint 表存在 + 兼容旧驼峰字段(如果你之前建过 houseId/viewedAt 之类)
+ *确保 footprint 表存在 + 兼容旧驼峰字段(如果你之前建过 houseId/viewedAt 之类)
  */
 function ensureFootprintTable(db) {
   const ddl = `
@@ -80,12 +80,12 @@ function getAuthFromBody(req) {
   return { phone, userId }
 }
 
-// ✅ 足迹用户主键：永远优先 phone（最稳定）
+//足迹用户主键：永远优先 phone（最稳定）
 function pickUserKey(phone, userId) {
   return phone || userId || ''
 }
 
-// ✅ 如果同时带 phone+userId 且不同：把旧 userId 的记录迁移到 phone（不丢历史）
+//如果同时带 phone+userId 且不同：把旧 userId 的记录迁移到 phone（不丢历史）
 function migrateUserIdToPhone(db, phone, userId) {
   if (!phone || !userId || phone === userId) return
   const stmt = db.prepare(`UPDATE footprint SET user_id=? WHERE user_id=?`)
@@ -181,7 +181,7 @@ function getHouseSnapshot(db, houseId) {
       coverUrl = firstImageFromAny(data?.pics || data?.images || data?.pictureList || data?.picList)
     }
 
-    // 3) ✅ 兜底：housePicture / house_picture
+    // 3)兜底：housePicture / house_picture
     if (!coverUrl) {
       coverUrl =
         firstPicFromHousePicture(data?.housePicture) ||
@@ -218,7 +218,7 @@ router.post('/footprint/add', async (req, res) => {
     const db = await getDB()
     ensureFootprintTable(db)
 
-    // ✅ 迁移：把旧 userId 的记录合并到 phone
+    //迁移：把旧 userId 的记录合并到 phone
     migrateUserIdToPhone(db, phone, userId)
 
     const now = Date.now()
@@ -232,7 +232,7 @@ router.post('/footprint/add', async (req, res) => {
       DO UPDATE SET viewed_at=excluded.viewed_at, snapshot=excluded.snapshot
     `)
 
-    // ✅ 写入也统一用 phone 优先（稳定）
+    //写入也统一用 phone 优先（稳定）
     const writeKey = pickUserKey(phone, userId)
     stmt.run([String(writeKey), String(houseId), now, snapStr])
     stmt.free()
@@ -261,7 +261,7 @@ router.get('/footprint/list', async (req, res) => {
     const db = await getDB()
     ensureFootprintTable(db)
 
-    // ✅ 读取前也做一次迁移（只要你带了 phone+userId 就能把旧数据合并）
+    //读取前也做一次迁移（只要你带了 phone+userId 就能把旧数据合并）
     migrateUserIdToPhone(db, phone, userId)
 
     const q = db.prepare(`

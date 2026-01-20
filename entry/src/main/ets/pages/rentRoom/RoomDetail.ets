@@ -22,7 +22,7 @@ import { NavBar } from '../../view/roomDetail/NavBar'
 import { getUserHouses, UserHouse } from '../../store/UserHouseStore'
 import { PUBLIC_BASE_URL } from '../../common/utils/Request'
 
-// ✅ 足迹写入：现在需要 FootprintAuth
+//足迹写入：现在需要 FootprintAuth
 import { addFootprintApi, FootprintAuth } from '../../api/footprint'
 
 interface UserInfo {
@@ -103,7 +103,7 @@ struct RoomDetail {
     }
   }
 
-  // ✅ 从 AppStorage 取足迹鉴权信息：优先 user.id，其次兼容旧字段
+  //从 AppStorage 取足迹鉴权信息：优先 user.id，其次兼容旧字段
   private getFootprintAuth(): FootprintAuth {
     let phone: string = ''
     let userId: string = ''
@@ -129,7 +129,7 @@ struct RoomDetail {
     return !!(auth.userId && auth.userId.length > 0) || !!(auth.phone && auth.phone.length > 0)
   }
 
-  /** ✅ 记录足迹（失败不影响详情页） */
+  /** 记录足迹（失败不影响详情页） */
   private recordFootprint(houseId: string): void {
     if (!houseId) return
     const auth: FootprintAuth = this.getFootprintAuth()

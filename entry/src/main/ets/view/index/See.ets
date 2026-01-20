@@ -7,7 +7,7 @@ import { NavBar } from '../see/NavBar'
 import { router } from '@kit.ArkUI'
 import { rvp } from '../../common/utils/DeviceScreen'
 
-// ⭐ 想看 store
+// 想看 store
 import { getWantSeeList, WantSeeItem } from '../../store/WantSeeStore'
 
 @Preview
@@ -79,7 +79,7 @@ export struct See {
                   }
 
                   Column({ space: rvp(4) }) {
-                    // ⭐ 标题：整租·华贸1958C区 1室1厅 南 ...
+                    //标题：整租·华贸1958C区 1室1厅 南 ...
                     Text(item.title || '房源标题')
                       .fontSize(14)
                       .fontWeight(FontWeight.Medium)

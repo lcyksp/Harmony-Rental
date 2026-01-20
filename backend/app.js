@@ -113,7 +113,7 @@ app.use('/auth/house', reservationsRouter);
 //嗯哼？
 app.use('/auth/house', reservationsRouter)
 
-// ⭐ 消息相关 API
+// 消息相关 API
 app.use('/auth/message', messagesRouter)
 
 //住房
@@ -124,7 +124,7 @@ app.use('/auth', footprintRouter)
 
 //定位
 app.use('/region', regionRouter)
-console.log('[app] /region router mounted ✅')
+console.log('[app] /region router mounted')
 
 //管理员
 app.use('/api/admin', adminRouter);

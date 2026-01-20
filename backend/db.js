@@ -30,7 +30,7 @@ export async function getDB() {
           );
         `);
 
-        // --- 🆕 新增用户表 ---
+        // --- 新增用户表 ---
         db.run(`
           CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -72,7 +72,7 @@ export async function getDB() {
           ON reservation(user_id, house_id);
       `);
 
-      // ⭐ 消息表（消息管家用）
+      // 消息表（消息管家用）
       db.run(`
         CREATE TABLE IF NOT EXISTS message (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
