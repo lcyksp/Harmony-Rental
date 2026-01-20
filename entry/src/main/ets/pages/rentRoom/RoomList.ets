@@ -5,8 +5,6 @@ import { ListContent } from '../../view/roomList/ListContent'
 import { rvp } from '../../common/utils/DeviceScreen'
 import type { SearchParams } from '../../viewmodel/RoomListModel'
 
-// ❌ 不再自己定义 SearchParams，这里用 viewmodel 里的那个
-
 @Entry
 @Component
 export struct RoomList {
@@ -24,7 +22,7 @@ export struct RoomList {
     orderType: '',
     navTitle: '',
     roomType: undefined,
-    // ⭐ 新增关键词字段，跟 SearchParams 保持一致
+    //新增关键词字段，跟 SearchParams 保持一致
     keyword: ''
   }
 
@@ -40,7 +38,7 @@ export struct RoomList {
       this.searchParams.navTitle = params['navTitle'] as string
     }
 
-    // ⭐ 关键：把路由里的 keyword 写回搜索框 & searchParams
+    //关键：把路由里的 keyword 写回搜索框 & searchParams
     if (params && typeof params['keyword'] === 'string') {
       const kw = params['keyword'] as string
       this.keyword = kw              // 顶部输入框回显“东莞”
@@ -52,7 +50,6 @@ export struct RoomList {
 
     console.info('[RoomList] searchParams = ' + JSON.stringify(this.searchParams))
   }
-
 
   // 点击“搜索”按钮
   private onSearchByKeyword() {
@@ -96,9 +93,6 @@ export struct RoomList {
           })
       }
       .padding({ left: rvp(16), right: rvp(16), top: rvp(8), bottom: rvp(8) })
-
-      // 下面保留你原来的筛选栏（如果有的话）
-      // ...
 
       // 房源列表内容（内部通过 @Consume<SearchParams> 拿 searchParams）
       ListContent()

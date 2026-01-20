@@ -1,3 +1,4 @@
+// entry/src/main/ets/pages/admin/AdminRoomManage.ets
 import { router } from '@kit.ArkUI'
 import promptAction from '@ohos.promptAction'
 import { NavBar } from '../../component/NavBar'
@@ -179,7 +180,7 @@ struct AdminRoomManage {
     return this.joinUrl(list[0])
   }
 
-  // ✅ 安全封面选择：coverUrl > imageUrl > housePicture(array|string)
+  //安全封面选择：coverUrl > imageUrl > housePicture(array|string)
   private getCover(item: AdminRoomListItem): string {
     const dyn: AdminRoomItemDynamic = item as AdminRoomItemDynamic
 
@@ -420,7 +421,7 @@ struct AdminRoomManage {
     Stack({ alignContent: Alignment.TopStart }) {
       Refresh({ refreshing: this.refreshing, offset: rvp(90), friction: 0.75 }) {
         List({ scroller: this.scroller }) {
-          // ✅ 关键修复：不要在 ListItem 里直接写 Blank（会报错）
+          //关键修复：不要在 ListItem 里直接写 Blank（会报错）
           ListItem() { Column().height(this.headerHeight()) }
 
           if (this.loading && !this.refreshing) {
@@ -452,7 +453,7 @@ struct AdminRoomManage {
             }, (it: AdminRoomListItem) => it.id)
           }
 
-          // ✅ 同样别直接 Blank：用空 Column 占位
+          //同样别直接 Blank：用空 Column 占位
           ListItem() { Column().height(rvp(24)) }
         }
         .width('100%')

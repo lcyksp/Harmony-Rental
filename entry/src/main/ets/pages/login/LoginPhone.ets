@@ -43,7 +43,7 @@ struct LoginPhone {
     return /^[0-9]{6}$/.test(pwd);
   }
 
-  // ✅ 方案A：管理员账号固定为 admin
+  //方案A：管理员账号固定为 admin
   private isAdminAccount(): boolean {
     return (this.phone || '').trim() === 'admin'
   }
@@ -51,7 +51,7 @@ struct LoginPhone {
   private getCanLogin(): boolean {
     if (!this.isChecked) return false
     if (!this.isValidPassword) return false
-    // ✅ 允许手机号或 admin
+    //允许手机号或 admin
     return this.isValidPhone || this.isAdminAccount()
   }
 
@@ -61,7 +61,7 @@ struct LoginPhone {
       return;
     }
 
-    // ✅ 允许手机号或 admin
+    //允许手机号或 admin
     if (!this.isValidPhone && !this.isAdminAccount()) {
       promptAction.showToast({ message: '请输入正确的手机号或管理员账号 admin' });
       return;
@@ -89,7 +89,7 @@ struct LoginPhone {
       AppStorage.SetOrCreate('userRole', role)
       AppStorage.SetOrCreate('token', data.token)
 
-      // ✅ 如果输入的是 admin，但后端返回不是 admin，直接拦住（防止普通人乱用 admin 入口）
+      //如果输入的是 admin，但后端返回不是 admin，直接拦住（防止普通人乱用 admin 入口）
       if (this.isAdminAccount() && role !== 'admin') {
         promptAction.showToast({ message: '不是管理员账号' });
         return;
@@ -97,7 +97,7 @@ struct LoginPhone {
 
       promptAction.showToast({ message: '登录成功' });
 
-      // ✅ 管理员跳管理页
+      //管理员跳管理页
       if (role === 'admin') {
         router.replaceUrl({ url: 'pages/admin/AdminHome' })
         return
@@ -125,7 +125,7 @@ struct LoginPhone {
       return;
     }
 
-    // ✅ 方案A：如果输入 admin，不允许走注册/找回
+    //方案A：如果输入 admin，不允许走注册/找回
     if (this.isAdminAccount()) {
       promptAction.showToast({ message: '管理员账号不支持此入口' });
       return;

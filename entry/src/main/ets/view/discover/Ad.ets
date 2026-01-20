@@ -1,7 +1,4 @@
-/**
- * @author yongoe
- * @since 2024/9/8
- */
+// entry/src/main/ets/view/discover/Ad.ets
 import { rvp } from '../../common/utils/DeviceScreen'
 import { Card } from '../../component/Card'
 import { ContentBlockItem, PostZone } from '../../viewmodel/DiscoverModel'

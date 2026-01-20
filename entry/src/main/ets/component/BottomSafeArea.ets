@@ -1,7 +1,6 @@
+// entry/src/main/ets/component/BottomSafeArea.ets
 /**
  * 避让区填充容器
- * @author yongoe
- * @since 2024/9/10
  */
 @Component
 export struct BottomSafeArea {

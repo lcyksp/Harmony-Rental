@@ -7,9 +7,8 @@ export interface AnyObject {
 }
 
 const instance = axios.create({
-  baseURL: 'http://192.168.3.49:7000',
+  baseURL: 'http://192.168.1.101:7000',
   timeout: 10000,
-  // ✅ 无论 200/400/500 都走 response 成功回调，从而必定打印 📥
   validateStatus: () => true,
 })
 
@@ -19,7 +18,7 @@ export const PUBLIC_BASE_URL: string = SERVER_URL + '/public/'
 
 /**
  * 请求拦截：加日志
- * ✅ 保持 any，避免 axios InternalAxiosRequestConfig 类型兼容问题
+ * 保持 any，避免 axios InternalAxiosRequestConfig 类型兼容问题
  */
 instance.interceptors.request.use(
   (config: any) => {
@@ -32,7 +31,7 @@ instance.interceptors.request.use(
       'data =',
       JSON.stringify(config.data || {}),
     )
-    // ✅ 自动注入登录 token（管理员接口也会自动带上）
+    //自动注入登录 token（管理员接口也会自动带上）
     const token: string = AppStorage.Has('token') ? (AppStorage.Get('token') as string) : ''
     if (token && token.length > 0) {
       if (!config.headers) {
@@ -53,7 +52,7 @@ instance.interceptors.request.use(
 
 /**
  * 响应拦截：无论 httpStatus 是多少，都在这里打印并按 {code} 决定成功失败
- * ✅ 关键修复：成功时只返回 response.data.data，不再把 {list,total} 拍扁成 list[]
+ * 关键修复：成功时只返回 response.data.data，不再把 {list,total} 拍扁成 list[]
  */
 instance.interceptors.response.use(
   (response: AnyObject) => {
@@ -69,7 +68,6 @@ instance.interceptors.response.use(
 
     // 后端统一返回 { code, data, message }
     if (response.data && response.data.code === 200) {
-      // ✅ 改回去：原样返回 data（可能是 {list,total} / 数组 / 对象）
       return response.data.data
     }
 

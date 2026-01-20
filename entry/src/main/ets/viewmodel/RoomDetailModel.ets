@@ -1,3 +1,4 @@
+//entry/src/main/ets/viewmodel/RoomDetailModel.ets
 /**
  * 房信息详情
  */

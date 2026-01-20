@@ -14,7 +14,7 @@ export interface ReservationItem {
   userId?: string;
   // 房东视角：后端把 user_id 映射成 tenantPhone
   tenantPhone?: string;
-  landlordPhone?: string;  // ✅ 新增：房东电话（租客端显示用）
+  landlordPhone?: string;  //房东电话（租客端显示用）
 
   // 房源信息
   houseTitle?: string;

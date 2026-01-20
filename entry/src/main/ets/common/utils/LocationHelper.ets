@@ -1,3 +1,4 @@
+// entry/src/main/ets/common/utils/LocationHelper.ets
 import { geoLocationManager } from '@kit.LocationKit'
 
 export interface LocatedCity {
@@ -5,7 +6,7 @@ export interface LocatedCity {
   provinceName: string
 }
 
-// ✅ 抽成命名类型，避免 “对象字面量作为类型声明”
+//抽成命名类型，避免 “对象字面量作为类型声明”
 interface GeoAddressSimple {
   locality?: string
   subAdministrativeArea?: string
@@ -15,7 +16,7 @@ interface GeoAddressSimple {
 /**
  * 纯工具函数：
  * 已知 latitude / longitude → 解析城市名
- * ❗不处理权限、不接触 Context
+ * 不处理权限、不接触 Context
  */
 export async function resolveCityFromLocation(
   latitude: number,

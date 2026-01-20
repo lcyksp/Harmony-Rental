@@ -64,10 +64,6 @@ export function registerApi(data: RegisterReq): Promise<RegisterResp> {
  * ===== 手机号+密码登录相关类型 =====
  */
 
-/**
- * ===== 手机号+密码登录相关类型 =====
- */
-
 // ① 先单独定义 user 结构
 export interface LoginPwdUser {
   id: number;
@@ -82,7 +78,6 @@ export interface LoginPwdData {
   token: string;
   user: LoginPwdUser;
 }
-
 
 /**
  * 登录（手机号 + 密码）

@@ -1,7 +1,4 @@
-/**
- * @author yongoe
- * @since 2024/9/3
- */
+// entry/src/main/ets/view/service/NavBar.ets
 import { rvp } from '../../common/utils/DeviceScreen'
 import { BarData } from '../../component/ScrollContainer'
 

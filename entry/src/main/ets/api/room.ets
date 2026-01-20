@@ -2,6 +2,7 @@
 import { http } from '../common/utils/Request'
 import { RoomListModel, SearchParams } from '../viewmodel/RoomListModel'
 import type { RoomDetailModel } from '../viewmodel/RoomDetailModel'
+import type { ProvinceItem, CityItem, DistrictItem } from '../viewmodel/RoomListModel'
 
 // 子结构类型
 export class HousePicture {
@@ -87,7 +88,7 @@ class OwnerOrdersParam {
 
 class EmptyBodyParam {}
 
-// 我租的 / 我发布的 卡片用的精简结构（✅补齐我发布的字段）
+// 我租的 / 我发布的 卡片用的精简结构（补齐我发布的字段）
 export class SimpleRoom {
   id: string = ''
   title: string = ''
@@ -97,7 +98,7 @@ export class SimpleRoom {
   // “我发布的”用来画小红点：有多少条待处理订单（后端可以不传，默认 0）
   pendingOrderCount: number = 0
 
-  // ✅ “我发布的”页面需要
+  //“我发布的”页面需要
   status: string = 'online' // online / offline
   imageList: string[] = []  // 封面列表（第一张即可）
   province: string = ''
@@ -153,7 +154,7 @@ class ApiRoomOrderListResp {
 }
 
 // =============================
-// ✅ “我的房源(全部 online+offline)”返回 item 结构（避免 any）
+//“我的房源(全部 online+offline)”返回 item 结构（避免 any）
 // =============================
 interface MyRoomItemRaw {
   id?: string | number | null
@@ -183,7 +184,7 @@ interface MyRoomItemRaw {
   hdic_district_name?: string | null
 }
 
-// ✅ 拆出来，避免 arkts-no-obj-literals-as-type
+//拆出来，避免 arkts-no-obj-literals-as-type
 class ApiMyRoomsData {
   list: MyRoomItemRaw[] = []
   total: number = 0
@@ -269,7 +270,7 @@ export const getMyPublishedRoomsApi = (ownerId: string): Promise<SimpleRoom[]> =
 }
 
 // =============================
-// ✅ 我发布的房源列表（返回 online + offline 全部）
+// 我发布的房源列表（返回 online + offline 全部）
 // GET /rooms/my?ownerId=xxx
 // =============================
 export const getMyRoomsApi = (ownerId: string): Promise<SimpleRoom[]> => {
@@ -353,7 +354,7 @@ export const deleteRoomApi = (roomId: string): Promise<void> => {
 }
 
 // =============================
-// ✅ 下架 - POST /rooms/:id/offline
+//下架 - POST /rooms/:id/offline
 // =============================
 export const offShelfRoomApi = (id: string): Promise<void> => {
   const body = new EmptyBodyParam()
@@ -361,7 +362,7 @@ export const offShelfRoomApi = (id: string): Promise<void> => {
 }
 
 // =============================
-// ✅ 上架 - POST /rooms/:id/online
+//上架 - POST /rooms/:id/online
 // =============================
 export const onShelfRoomApi = (id: string): Promise<void> => {
   const body = new EmptyBodyParam()
@@ -454,4 +455,47 @@ export const reservationApi = (params: ReservationParams): Promise<void> => {
 // 提供给页面调用的别名函数（方便以后扩展）
 export const createReservationApi = (params: ReservationParams): Promise<void> => {
   return reservationApi(params)
+}
+
+// =============================
+// 省 / 市 / 区（区域）接口
+// =============================
+
+// 这里用你的后端接口：/region/provinces /region/cities /region/areas
+// 如果你后端路径不同，把字符串改掉即可
+
+// 避免 arkts-no-obj-literals-as-types：不要在参数位置写 { provinceCode: string } 这种类型
+class ProvinceQuery {}
+
+class CityQuery {
+  provinceCode: string = ''
+}
+
+class AreaQuery {
+  cityCode: string = ''
+}
+
+//给对外 API 使用的参数类型（同样用 class，别用对象字面量类型）
+export class CityApiParam {
+  provinceCode: string = ''
+}
+
+export class AreaApiParam {
+  cityCode: string = ''
+}
+
+export const getProvinceApi = (): Promise<ProvinceItem[]> => {
+  return http.get<ProvinceItem[]>('/region/provinces', new ProvinceQuery())
+}
+
+export const getCityApi = (param: CityApiParam): Promise<CityItem[]> => {
+  const q = new CityQuery()
+  q.provinceCode = param.provinceCode
+  return http.get<CityItem[]>('/region/cities', q)
+}
+
+export const getAreaApi = (param: AreaApiParam): Promise<DistrictItem[]> => {
+  const q = new AreaQuery()
+  q.cityCode = param.cityCode
+  return http.get<DistrictItem[]>('/region/areas', q)
 }

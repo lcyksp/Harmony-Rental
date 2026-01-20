@@ -44,7 +44,7 @@ export struct NavList {
       ForEach(this.navList, (nav: NavItem) => {
         GridItem() {
           Column({ space: rvp(12) }) {
-            // ⬇️ 这里改成用本地图片
+            //这里改成用本地图片
             Image(this.getIconByTitle(nav.title))
               .width(rvp(60))
               .height(rvp(60))

@@ -1,7 +1,6 @@
+// entry/src/main/ets/component/Card.ets
 /**
  * 卡片组件
- * @author yongoe
- * @since 2024/9/5
  */
 @Component
 export struct Card {

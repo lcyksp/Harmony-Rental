@@ -1,9 +1,7 @@
+// entry/src/main/ets/component/Drawer.ets
 /**
  * 抽屉组件
- * @author yongoe
- * @since 2024/9/10
  */
-
 @Component
 export struct Drawer {
   @Link show: boolean;

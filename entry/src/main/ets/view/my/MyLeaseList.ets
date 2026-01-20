@@ -1,3 +1,4 @@
+// entry/src/main/ets/view/my/MyLeaseList.ets
 import router from '@ohos.router';
 import prompt from '@ohos.prompt';
 import { rvp } from '../../common/utils/DeviceScreen';
@@ -135,7 +136,7 @@ struct MyLeaseList {
     this.currentTab = tab;
   }
 
-  // ✅ 新增：根据当前 Tab 过滤列表数据
+  //新增：根据当前 Tab 过滤列表数据
   private getFilteredList(): RentContractItem[] {
     // Tab 3: 全部 -> 直接返回所有
     if (this.currentTab === 3) {
@@ -192,7 +193,7 @@ struct MyLeaseList {
     }
   }
 
-  // ✅ 修改：更清晰的卡片渲染逻辑
+  //修改：更清晰的卡片渲染逻辑
   @Builder
   LeaseCard(item: RentContractItem) {
     Row() {
@@ -437,13 +438,11 @@ struct MyLeaseList {
               }
             }
             .width('100%')
-            // 1️⃣ 确保内部 Column 也是从顶部开始排列
             .justifyContent(FlexAlign.Start)
             .padding({ left: rvp(12), right: rvp(12), top: rvp(4), bottom: rvp(20) });
           }
           .width('100%')
           .height('100%')
-          // 2️⃣ 【核心修复】强制 Scroll 的内容对齐到左上角，而不是垂直居中
           .align(Alignment.TopStart);
         }
       }

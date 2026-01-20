@@ -1,3 +1,4 @@
+// entry/src/main/ets/store/WantSeeStore.ets
 // 想看房源的最小信息，先只存 id，后面需要再扩展字段
 export class WantSeeItem {
   id: string = ''        // 房源ID

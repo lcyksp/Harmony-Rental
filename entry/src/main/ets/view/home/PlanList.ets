@@ -1,3 +1,4 @@
+// entry/src/main/ets/view/home/PlanList.ets
 import { rvp } from '../../common/utils/DeviceScreen'
 import promptAction from '@ohos.promptAction'  // 新增这一行
 

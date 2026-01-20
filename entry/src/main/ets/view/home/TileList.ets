@@ -1,3 +1,4 @@
+//entry/src/main/ets/view/home/TileList.ets
 /**
  * 2个平铺组件：硅谷家服 + 硅谷智能
  */

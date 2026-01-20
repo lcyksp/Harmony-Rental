@@ -1,3 +1,4 @@
+// entry/src/main/ets/pages/owner/PublishHouse.ets
 import { router, promptAction } from '@kit.ArkUI';
 import { rvp } from '../../common/utils/DeviceScreen';
 import { addUserHouse } from '../../store/UserHouseStore';

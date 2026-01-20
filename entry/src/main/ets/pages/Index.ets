@@ -1,10 +1,8 @@
+// entry/src/main/ets/pages/Index.ets
 import { setSystemBar } from '../common/utils/DeviceScreen'
 import { Home } from '../view/index/Home'
 import { See } from '../view/index/See'
 import { My } from '../view/index/My'
-// ⭐ 不再需要服务和发现页
-// import { Service } from '../view/index/Service'
-// import { Discover } from '../view/index/Discover'
 
 PersistentStorage.persistProp('token', '')
 

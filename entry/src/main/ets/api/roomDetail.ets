@@ -1,3 +1,4 @@
+// entry/src/main/ets/api/roomDetail.ets
 import { http } from '../common/utils/Request'
 import type { RoomDetailModel } from '../viewmodel/RoomDetailModel'
 

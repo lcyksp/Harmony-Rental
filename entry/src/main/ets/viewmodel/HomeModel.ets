@@ -1,3 +1,4 @@
+// entry/src/main/ets/viewmodel/HomeModel.ets
 /**
  * 首页数据
  */

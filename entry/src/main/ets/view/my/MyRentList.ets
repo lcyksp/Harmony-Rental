@@ -10,7 +10,7 @@ interface UserInfo {
 }
 
 function getCurrentUserPhone(): string {
-  // ✅ 登录页写入的是 userPhone（你 LoginPhone.ets 里就是 AppStorage.set('userPhone', data.user.phone)）
+  //登录页写入的是 userPhone（你 LoginPhone.ets 里就是 AppStorage.set('userPhone', data.user.phone)）
   if (AppStorage.Has('userPhone')) {
     const p = AppStorage.Get('userPhone') as string
     if (p && p.length > 0) return p

@@ -1,3 +1,4 @@
+// entry/src/main/ets/view/discover/NavBar.ets
 import { rvp } from '../../common/utils/DeviceScreen'
 import { BarData } from '../../component/ScrollContainer'
 

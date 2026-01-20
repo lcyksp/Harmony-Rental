@@ -1,7 +1,6 @@
+// entry/src/main/ets/view/roomDetail/NavBar.ets
 /**
  * 通用导航栏组件
- * @author yongoe
- * @since 2024/9/6
  */
 import { router } from '@kit.ArkUI'
 import { rvp } from '../../common/utils/DeviceScreen'

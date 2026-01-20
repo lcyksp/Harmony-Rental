@@ -1,3 +1,4 @@
+// entry/src/main/ets/common/utils/Emitter.ts
 type ICallback = (...args: any[]) => void
 
 interface Events {

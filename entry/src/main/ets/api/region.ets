@@ -1,3 +1,4 @@
+// entry/src/main/ets/api/region.ets
 import { http } from '../common/utils/Request'
 
 export interface CityResolveResp {

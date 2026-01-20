@@ -1,7 +1,6 @@
+// entry/src/main/ets/viewmodel/datasource/RoomRecommendDataSource.ets
 /**
  * BannerList懒加载
- * @author yongoe
- * @since 2024/8/31
  */
 import { RoomRecommendItem } from '../HomeModel';
 

@@ -24,8 +24,8 @@ interface HousePictureItem {
 
 interface RoomFromApi {
   id: string;
-  houseId?: string;  // ⭐ 新增：houseId 字段
-  roomId?: string;   // ⭐ 新增：roomId 字段
+  houseId?: string;
+  roomId?: string;
   title?: string;
   location?: string;
   rentPrice?: string;
@@ -48,7 +48,7 @@ export struct ListContent {
 
   @State roomList: RoomItem[] = [];
   @State displayList: RoomItem[] = [];
-  @State isLoading: boolean = true; // ⭐ 是否正在加载
+  @State isLoading: boolean = true; //是否正在加载
 
   // ------------------- 本地房源映射 -------------------
   private fromUserHouse(user: UserHouse): RoomItem {
@@ -115,7 +115,7 @@ export struct ListContent {
       }
     }
 
-    // ⭐ 这里用联合类型来判断取哪个字段
+    //这里用联合类型来判断取哪个字段
     const roomId: string =
       api.houseId ?? api.roomId ?? api.id ?? ''; // 尝试 houseId、roomId、id
 
@@ -157,7 +157,7 @@ export struct ListContent {
 
   // ------------------- 根据当前 searchParams 加载列表 -------------------
   private loadRooms(): void {
-    this.isLoading = true // ⭐ 进入加载状态
+    this.isLoading = true //进入加载状态
 
     const routeParams = router.getParams() as Record<string, Object> | undefined
     let keyword: string = ''
@@ -285,7 +285,7 @@ export struct ListContent {
   build(): void {
     Column() {
       if (this.isLoading) {
-        // ⭐ 加载中：使用 LoadingProgress 转圈动画
+        //加载中：使用 LoadingProgress 转圈动画
         Column() {
           LoadingProgress()
             .color('#FF5500')
@@ -301,13 +301,13 @@ export struct ListContent {
         .width('100%')
         .height('100%');
       } else if (!this.displayList || this.displayList.length === 0) {
-        // ⭐ 加载结束但没有房源
+        //加载结束但没有房源
         Text('暂无房源')
           .fontSize(rvp(14))
           .fontColor('#999')
           .margin({ top: rvp(40) });
       } else {
-        // ⭐ 有房源，展示列表
+        //有房源，展示列表
         List() {
           ForEach(
             this.displayList,

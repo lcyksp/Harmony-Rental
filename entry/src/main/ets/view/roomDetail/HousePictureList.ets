@@ -1,7 +1,4 @@
-/**
- * @author yongoe
- * @since 2024/9/8
- */
+// entry/src/main/ets/view/roomDetail/HousePictureList.ets
 import { rvp } from '../../common/utils/DeviceScreen'
 import { HousePictureItem } from '../../viewmodel/RoomDetailModel'
 

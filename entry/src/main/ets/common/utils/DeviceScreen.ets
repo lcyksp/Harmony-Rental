@@ -1,4 +1,4 @@
-// entry/src/main/ets/common/utils/DeviceScreen
+// entry/src/main/ets/common/utils/DeviceScreen.ets
 /**
  * 屏幕设备工具类
  */

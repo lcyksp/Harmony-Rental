@@ -1,7 +1,4 @@
-/**
- * @author yongoe
- * @since 2024/9/8
- */
+// entry/src/main/ets/view/discover/BannerScroll.ets
 import { rvp } from '../../common/utils/DeviceScreen';
 import { DanMuItem } from '../../viewmodel/DiscoverModel';
 

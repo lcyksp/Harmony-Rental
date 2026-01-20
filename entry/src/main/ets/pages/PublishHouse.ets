@@ -1,5 +1,4 @@
 // entry/src/main/ets/pages/PublishHouse.ets
-
 import router from '@ohos.router';
 import promptAction from '@ohos.promptAction';
 import {
@@ -323,7 +322,7 @@ struct PublishHousePage {
     detailJson.ownerId = this.token
     detailJson.status = 'online'
 
-    // ★ 新增：把房东手机号一起存进房源数据
+    //新增：把房东手机号一起存进房源数据
     detailJson.landlordPhone = this.userPhone
 
     let pic: HousePicture = new HousePicture()

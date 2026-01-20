@@ -1,3 +1,4 @@
+// entry/src/main/ets/mapper/UserHouseMapper.ets
 import { UserHouse } from '../store/UserHouseStore'
 import { RoomRecommendItem, TagItem } from '../viewmodel/HomeModel'
 

@@ -7,7 +7,7 @@ import { ReserveRoomParams } from '../../viewmodel/BookRoomModel';
 import { getUserHouses, UserHouse, setHouseRented } from '../../store/UserHouseStore';
 import { createRentApi } from '../../api/rent';
 
-// ⭐ 想看 store
+//想看 store
 import { isInWantSee, toggleWantSee } from '../../store/WantSeeStore';
 
 // 兼容 axios 返回的错误结构（显式类型，避免 ArkTS 报错）
@@ -33,7 +33,7 @@ export struct Book {
   // 房源 ID
   @Prop houseId: string
 
-  // ⭐ 新增：房源标题、封面、价格文案、位置文案
+  //新增：房源标题、封面、价格文案、位置文案
   @Prop title: string = ''
   @Prop cover: string = ''
   @Prop priceText: string = ''
@@ -63,11 +63,11 @@ export struct Book {
       }
     }
 
-    // ⭐ 根据 store 初始化当前房源是否已想看
+    //根据 store 初始化当前房源是否已想看
     this.isWantSee = isInWantSee(this.houseId)
   }
 
-  // ⭐ 切换「想看」状态：更新 Store + 本地状态
+  //切换「想看」状态：更新 Store + 本地状态
   private handleToggleWantSee(): void {
     const now: boolean = toggleWantSee(this.houseId, {
       title: this.title,
@@ -106,7 +106,7 @@ export struct Book {
         // 后端房源逻辑
         reservationApi(param)
           .then(() => {
-            // ✅ 只有 HTTP 2xx 才会走这里
+            //只有 HTTP 2xx 才会走这里
             promptAction.showToast({ message: '预约成功，等待房东确认' })
             this.yuDingController.close()
           })
@@ -311,7 +311,7 @@ export struct Book {
 
   build() {
     Row() {
-      // ⭐ 左下角：爱心 + 99+ + 想看/已想看
+      //左下角：爱心 + 99+ + 想看/已想看
       Column({ space: rvp(2) }) {
         Image($r('app.media.my_icon_1'))
           .width(rvp(18))

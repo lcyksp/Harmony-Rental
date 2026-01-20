@@ -1,7 +1,4 @@
-/**
- * @author yongoe
- * @since 2024/9/8
- */
+// entry/src/main/ets/component/Empty.ets
 @Component
 export struct Empty {
   @Prop title: ResourceStr

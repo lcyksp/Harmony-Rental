@@ -1,7 +1,6 @@
+// entry/src/main/ets/viewmodel/datasource/BannerListDataSource.ets
 /**
  * BannerList懒加载
- * @author yongoe
- * @since 2024/8/31
  */
 import { BannerItem } from '../HomeModel';
 

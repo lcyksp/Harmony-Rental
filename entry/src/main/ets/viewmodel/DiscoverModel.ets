@@ -1,3 +1,4 @@
+//entry/src/main/ets/viewmodel/DiscoverModel.ets
 /**
  * 发现页面
  */

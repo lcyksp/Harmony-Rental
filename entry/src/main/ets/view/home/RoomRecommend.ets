@@ -17,7 +17,7 @@ interface HousePictureDTO {
   picList?: string[]
 }
 
-// ✅ ArkTS：用继承代替交叉类型
+//ArkTS：用继承代替交叉类型
 interface RoomItemWithRegion extends RoomItem {
   provinceCode?: string
   cityCode?: string
@@ -29,7 +29,7 @@ export struct RoomRecommend {
   @State roomRecommendDataSource: RoomRecommendDataSource = new RoomRecommendDataSource()
   @State isEmpty: boolean = false
 
-  // ✅ 任意区域变化都刷新（防抖）
+  //任意区域变化都刷新（防抖）
   @StorageLink('currentProvinceCode')
   @Watch('onRegionChanged')
   currentProvinceCode: string = ''
@@ -42,7 +42,7 @@ export struct RoomRecommend {
   @Watch('onRegionChanged')
   currentDistrictCode: string = ''
 
-  // ✅ 外部触发刷新信号
+  //外部触发刷新信号
   @StorageLink('needReloadHomeRooms')
   @Watch('onNeedReloadChanged')
   needReloadHomeRooms: boolean = false
@@ -96,7 +96,7 @@ export struct RoomRecommend {
           serverList = res.records as RoomItemWithRegion[]
         }
 
-        // ✅ 前端兜底过滤：仅当后端返回里确实有这些字段时才过滤
+        //前端兜底过滤：仅当后端返回里确实有这些字段时才过滤
         const pCode: string = this.currentProvinceCode || ''
         const cCode: string = this.currentCityCode || ''
         const dCode: string = this.currentDistrictCode || ''
@@ -121,7 +121,7 @@ export struct RoomRecommend {
           }
         }
 
-        // ✅ 空态
+        //空态
         if (serverList.length === 0) {
           this.isEmpty = true
           this.roomRecommendDataSource.setList([])
@@ -137,7 +137,7 @@ export struct RoomRecommend {
           // ===== 封面图统一取 string URL =====
           let cover: string = ''
 
-          // ① housePicture 是数组：取第一张
+          //housePicture 是数组：取第一张
           if (Array.isArray(item.housePicture)) {
             const hpList: HousePictureDTO[] = item.housePicture as HousePictureDTO[]
             if (hpList.length > 0) {
@@ -155,7 +155,7 @@ export struct RoomRecommend {
             }
           }
 
-          // ② housePicture 是字符串（兼容旧格式）
+          //housePicture 是字符串（兼容旧格式）
           if (!cover && typeof item.housePicture === 'string') {
             let raw: string = (item.housePicture as string).trim()
             if (raw.startsWith('http://') || raw.startsWith('https://')) {
@@ -166,7 +166,7 @@ export struct RoomRecommend {
             }
           }
 
-          // ③ 兜底字段
+          //兜底字段
           if (!cover && item.imageUrl) cover = item.imageUrl
           if (!cover && item.coverUrl) cover = item.coverUrl
 
@@ -279,7 +279,7 @@ export struct RoomRecommend {
     Row({ space: rvp(6) }) {
       Image($r('app.media.location'))
         .width(rvp(12))
-        .height(rvp(14)) // ✅ 这里别再有多余的 () 了
+        .height(rvp(14))
       Text(room.address)
         .fontSize(rvp(12))
         .fontColor($r('app.color.white'))

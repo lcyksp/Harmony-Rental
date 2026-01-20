@@ -1,3 +1,4 @@
+//entry/src/main/ets/view/home/SwiperLayout.ets
 /**
  * 轮播组件
  */

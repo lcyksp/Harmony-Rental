@@ -1,3 +1,4 @@
+// entry/src/main/ets/store/UserHouseStore.ets
 export class UserHouse {
   id: number = 0
   title: string = ''

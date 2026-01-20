@@ -34,7 +34,7 @@ export struct Home {
   @State planList: PlanItem[] = []
   @State tileList: TileItem[] = []
 
-  // ✅ 关键：让 Home 感知区域变化
+  //关键：让 Home 感知区域变化
   @StorageLink('currentProvinceCode') currentProvinceCode: string = ''
   @StorageLink('currentCityCode') currentCityCode: string = ''
   @StorageLink('currentDistrictCode') currentDistrictCode: string = ''
@@ -67,7 +67,7 @@ export struct Home {
         PlanList()
         Ad({ adPicture: this.adPicture })
 
-        // ✅ 关键：区域变化时强制重建 RoomRecommend
+        //关键：区域变化时强制重建 RoomRecommend
         RoomRecommend()
           .key(`${this.currentProvinceCode}_${this.currentCityCode}_${this.currentDistrictCode}`)
       }

@@ -1,7 +1,4 @@
-/**
- * @author yongoe
- * @since 2024/9/5
- */
+// entry/src/main/ets/view/service/VIP.ets
 import { rvp } from '../../common/utils/DeviceScreen'
 import { BarData } from '../../component/ScrollContainer'
 import { VipServiceItem } from '../../viewmodel/ServiceModel'

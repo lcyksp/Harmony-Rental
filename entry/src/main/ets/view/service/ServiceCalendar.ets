@@ -1,3 +1,4 @@
+//entry/src/main/ets/view/service/ServiceCalendar.ets
 import { rvp } from '../../common/utils/DeviceScreen'
 import { Card } from '../../component/Card'
 import { CalendarList } from '../../utils/Calendar'
@@ -10,7 +11,7 @@ export struct ServiceCalendar {
 
   /**
    * 标题
-   */
+   **/
   @Builder
   title() {
     Row() {
@@ -50,18 +51,18 @@ export struct ServiceCalendar {
         .borderRadius(rvp(4))
         .backgroundColor(index == 2 ? '#CDFFD9' : '')
       })
-    }.justifyContent(FlexAlign.SpaceBetween)
+    }
+    .justifyContent(FlexAlign.SpaceBetween)
     .width('100%')
     .padding(rvp(8))
   }
 
   /**
    * 内容
+   * Builder 内不要写 let/const 语句，改成传参
    */
   @Builder
-  content() {
-    let act = this.serviceActivity
-
+  content(act?: ServiceActivityItem) {
     Column({ space: rvp(8) }) {
       // 名称
       Text(act?.name ?? '')
@@ -96,18 +97,15 @@ export struct ServiceCalendar {
     }
   }
 
-
   build() {
     Column() {
       Card({ cardPadding: 0 }) {
         this.title()
-
         this.monthList()
-
-        this.content()
+        // 在 build 里传入参数
+        this.content(this.serviceActivity)
       }
     }
     .width('100%')
   }
 }
-

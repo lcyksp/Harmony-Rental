@@ -1,3 +1,4 @@
+// entry/src/main/ets/viewmodel/UserModel.ets
 /**
  * 用户信息模型
  */

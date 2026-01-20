@@ -1,3 +1,4 @@
+// entry/src/main/ets/entrybackupability/EntryBackupAbility.ets
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { BackupExtensionAbility, BundleVersion } from '@kit.CoreFileKit';
 

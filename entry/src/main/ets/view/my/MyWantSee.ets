@@ -1,3 +1,4 @@
+// entry/src/main/ets/view/my/MyWantSee.ets
 /**
  * 我的 → 想看列表
  * 和底部 tab 的「想看」共用同一份数据，但界面长得更像“我的”页面
@@ -38,12 +39,10 @@ struct MyWantSee {
       .padding({
         left: rvp(16),
         right: rvp(16),
-        // ⭐ 关键是这个 top，往下挪一截
         top: rvp(48),
         bottom: rvp(8)
       })
       .backgroundColor('#8FE1A2')
-
 
       // 列表区域
       if (this.wantSeeList.length === 0) {

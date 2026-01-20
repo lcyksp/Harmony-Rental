@@ -1,7 +1,6 @@
+// entry/src/main/ets/component/Avatar.ets
 /**
  * 头像组件
- * @author yongoe
- * @since 2024/9/8
  */
 @Component
 export struct Avatar {

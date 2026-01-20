@@ -5,7 +5,7 @@ import promptAction from '@ohos.promptAction'
 @Entry
 @Component
 struct SettingsPage {
-  // ✅ 用 StorageLink，this.token 改动会同步到 AppStorage
+  //用 StorageLink，this.token 改动会同步到 AppStorage
   @StorageLink('token') token: string = ''
   @StorageProp('topRectHeight') topRectHeight: number = 0
 

@@ -4,7 +4,6 @@ import { router } from '@kit.ArkUI'
 import { rvp } from '../../common/utils/DeviceScreen'
 import promptAction from '@ohos.promptAction'
 
-
 @Entry
 @Component
 struct AdminHome {
@@ -16,7 +15,7 @@ struct AdminHome {
         .fontSize(rvp(16))
         .margin({ top: rvp(24) })
 
-      // ✅ 新增：进入房源管理
+      //新增：进入房源管理
       Button('房源管理')
         .margin({ top: rvp(16) })
         .onClick(() => {

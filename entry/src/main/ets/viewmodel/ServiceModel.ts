@@ -1,3 +1,4 @@
+// entry/src/main/ets/viewmodel/ServiceModel.ts
 /**
  * 服务页面数据
  */

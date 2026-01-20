@@ -1,7 +1,6 @@
+//entry/src/main/ets/viewmodel/datasource/RoomListDataSource.ets
 /**
  * roomList懒加载
- * @author yongoe
- * @since 2024/8/31
  */
 import { RoomItem } from '../RoomListModel'
 

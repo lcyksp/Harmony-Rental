@@ -1,5 +1,4 @@
 // entry/src/main/ets/common/utils/AuthStore.ets
-
 export class AuthStore {
   // 目前用来模拟“已注册用户的手机号”
   private static registeredPhones: string[] = []

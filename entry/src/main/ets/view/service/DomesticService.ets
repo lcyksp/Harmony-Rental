@@ -1,7 +1,4 @@
-/**
- * @author yongoe
- * @since 2024/9/5
- */
+// entry/src/main/ets/view/service/DomesticService.ets
 import { rvp } from '../../common/utils/DeviceScreen'
 import { Card } from '../../component/Card'
 import { HomeServiceItem } from '../../viewmodel/ServiceModel'

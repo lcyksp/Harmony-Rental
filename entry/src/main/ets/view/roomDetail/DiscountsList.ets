@@ -1,7 +1,4 @@
-/**
- * @author yongoe
- * @since 2024/9/9
- */
+// entry/src/main/ets/view/roomDetail/DiscountsList.ets
 import { rvp } from '../../common/utils/DeviceScreen'
 import { Discount } from '../../viewmodel/RoomDetailModel'
 

@@ -1,3 +1,4 @@
+// entry/src/main/ets/api/rent.ets
 import { http } from '../common/utils/Request';
 
 export interface RentContractItem {
@@ -16,7 +17,6 @@ export interface LandlordRentListData {
   list?: RentContractItem[];
 }
 
-// 你后端现在是：{ code:200, data:{ list:[...] }, message:"ok" }
 interface ApiRespWrap<T> {
   code?: number
   message?: string
@@ -48,41 +48,41 @@ function unwrapRentList(resp: RentListResp): RentContractItem[] {
   return [];
 }
 
-/** ✅ 房东：我租出的（列表） */
+/** 房东：我租出的（列表） */
 export const getLandlordRentListApi = (phone: string): Promise<RentContractItem[]> => {
   return http
     .get<RentListResp>('/auth/rent/landlord-list', { phone })
     .then((resp: RentListResp) => unwrapRentList(resp));
 }
 
-/** ✅ 房东：确认出租 */
+/** 房东：确认出租 */
 export const confirmRentApi = (id: number, landlordPhone: string): Promise<void> => {
   return http.post<void>('/auth/rent/confirm', { id, landlordPhone });
 }
 
-/** ✅ 租客：我租到的（生效中） */
+/** 租客：我租到的（生效中） */
 export const getMyActiveRentApi = (phone: string): Promise<RentContractItem[]> => {
   return http
     .get<RentListResp>('/auth/rent/my-active', { phone })
     .then((resp: RentListResp) => unwrapRentList(resp));
 }
 
-/** ✅ 租客：申请退租 */
+/** 租客：申请退租 */
 export const applyQuitApi = (id: number, tenantPhone: string, reason?: string): Promise<void> => {
   return http.post<void>('/auth/rent/quit/apply', { id, tenantPhone, reason: reason ?? '' });
 }
 
-/** ✅ 房东：同意退租 */
+/** 房东：同意退租 */
 export const confirmQuitApi = (id: number, landlordPhone: string): Promise<void> => {
   return http.post<void>('/auth/rent/quit/confirm', { id, landlordPhone });
 }
 
-/** ✅ 房东：驳回退租 */
+/** 房东：驳回退租 */
 export const rejectQuitApi = (id: number, landlordPhone: string, reason?: string): Promise<void> => {
   return http.post<void>('/auth/rent/quit/reject', { id, landlordPhone, reason: reason ?? '' });
 }
 
-/** ✅ 租客：下订/创建租约 */
+/** 租客：下订/创建租约 */
 export const createRentApi = (houseId: string, tenantPhone: string, remark?: string): Promise<void> => {
   return http.post<void>('/auth/rent/create', {
     houseId,
@@ -90,7 +90,7 @@ export const createRentApi = (houseId: string, tenantPhone: string, remark?: str
     remark: remark ?? ''
   });
 }
-/** ✅ 房东：驳回/取消出租（待确认时） */
+/** 房东：驳回/取消出租（待确认时） */
 export const rejectRentApi = (id: number, landlordPhone: string, reason?: string): Promise<void> => {
   return http.post<void>('/auth/rent/reject', {
     id,

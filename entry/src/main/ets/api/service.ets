@@ -1,6 +1,6 @@
+// entry/src/main/ets/api/service.ets
 import { http } from '../common/utils/Request'
 import { ServiceModel } from '../viewmodel/ServiceModel';
-
 
 /**
  * 服务页信息

@@ -15,22 +15,22 @@ export interface MessageListResp {
   list: MessageItem[];
 }
 
-// ⭐ 未读数量响应类型
+// 未读数量响应类型
 class UnreadCountResp {
   count: number = 0;
 }
 
-// ⭐ 未读数量请求参数
+// 未读数量请求参数
 class UnreadCountParam {
   userId: string = '';
 }
 
-// ⭐ 消息列表请求参数
+// 消息列表请求参数
 class MessageListParam {
   userId: string = '';
 }
 
-// ⭐ 全部已读请求参数
+// 全部已读请求参数
 class ReadAllParam {
   userId: string = '';
 }

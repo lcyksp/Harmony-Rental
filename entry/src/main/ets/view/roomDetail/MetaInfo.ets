@@ -1,7 +1,4 @@
-/**
- * @author yongoe
- * @since 2024/9/9
- */
+// entry/src/main/ets/view/roomDetail/MetaInfo.ets
 import { getWindowWidth, rvp } from '../../common/utils/DeviceScreen'
 import { DistanceInfoItem, MetaInfoItem } from '../../viewmodel/RoomDetailModel'
 

@@ -1,5 +1,4 @@
 // entry/src/main/ets/view/my/MyRoomCarousel.ets
-
 import promptAction from '@ohos.promptAction'
 import { rvp } from '../../common/utils/DeviceScreen'
 
@@ -10,7 +9,7 @@ import {
   deleteRoomApi
 } from '../../api/room'
 
-// ✅ 新增：引入 Rent 相关接口和类型
+//新增：引入 Rent 相关接口和类型
 import {
   RentContractItem,
   getMyActiveRentApi,
@@ -27,7 +26,7 @@ const TAB_ITEMS: TabItem[] = [
   { id: 1, label: '我发布的' }
 ]
 
-// ✅ 辅助函数：获取当前用户手机号 (和 MyRentList 保持一致)
+//辅助函数：获取当前用户手机号 (和 MyRentList 保持一致)
 interface UserInfo {
   phone?: string;
   userId?: string;
@@ -52,7 +51,7 @@ function getCurrentUserPhone(): string {
   return ''
 }
 
-// ✅ 辅助函数：处理空字符串
+//辅助函数：处理空字符串
 function safeStr(v: string | undefined | null, fallback: string = ''): string {
   return typeof v === 'string' ? v : fallback;
 }
@@ -67,7 +66,7 @@ export struct MyRoomCarousel {
 
   @State currentIndex: number = 0
 
-  // ✅ 修改：rentedList 改为 RentContractItem 类型
+  //修改：rentedList 改为 RentContractItem 类型
   @State rentedList: RentContractItem[] = []
   @State publishedList: SimpleRoom[] = []
 
@@ -95,7 +94,7 @@ export struct MyRoomCarousel {
 
     this.loading = !this.refreshing
     try {
-      // ✅ 1. 加载“我租到的” (使用 getMyActiveRentApi)
+      //1. 加载“我租到的” (使用 getMyActiveRentApi)
       if (this.userPhone) {
         this.rentedList = await getMyActiveRentApi(this.userPhone)
       } else {
@@ -116,7 +115,7 @@ export struct MyRoomCarousel {
     }
   }
 
-  // ✅ 新增：退租逻辑
+  //新增：退租逻辑
   private async onQuit(item: RentContractItem) {
     try {
       // 这里的第二个参数是 reason，暂时传空字符串
@@ -163,7 +162,7 @@ export struct MyRoomCarousel {
     .padding({ left: rvp(16), right: rvp(16), top: rvp(8), bottom: rvp(8) })
   }
 
-  // ✅ 新增：专门渲染“我租到的”卡片 (带退租按钮)
+  //新增：专门渲染“我租到的”卡片 (带退租按钮)
   @Builder
   RentedListContent() {
     if (this.rentedList.length === 0) {
@@ -230,7 +229,7 @@ export struct MyRoomCarousel {
     }
   }
 
-  // ✅ 原有：渲染“我发布的”卡片 (带删除按钮)
+  //原有：渲染“我发布的”卡片 (带删除按钮)
   @Builder
   PublishedListContent() {
     if (this.publishedList.length === 0) {
@@ -291,7 +290,7 @@ export struct MyRoomCarousel {
           Column() {
             this.TabHeader()
 
-            // ✅ 根据 index 切换不同的渲染内容
+            //根据 index 切换不同的渲染内容
             if (this.loading && !this.refreshing) {
               Column() { Text('加载中…').fontSize(rvp(14)).fontColor('#777').margin({ top: rvp(16) }) }
               .width('100%').alignItems(HorizontalAlign.Center)

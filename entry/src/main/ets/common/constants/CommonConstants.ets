@@ -1,3 +1,4 @@
+// entry/src/main/ets/common/constants/CommonConstants.ets
 /**
  * constant about common feature
  */

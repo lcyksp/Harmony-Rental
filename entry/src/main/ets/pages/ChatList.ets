@@ -50,7 +50,7 @@ function getCurrentUserId(): string {
   return ''
 }
 
-// ⭐ 类型 → 标签首字
+//类型 → 标签首字
 function typeToLabel(type: string): string {
   if (type === 'system') return '系'
   if (type === 'order' || type === 'reservation') return '订'
@@ -58,7 +58,7 @@ function typeToLabel(type: string): string {
   return '信'
 }
 
-// ⭐ 类型 → 颜色
+//类型 → 颜色
 function typeToColor(type: string): string {
   if (type === 'system') return '#5AC38F'
   if (type === 'order' || type === 'reservation') return '#FF9900'

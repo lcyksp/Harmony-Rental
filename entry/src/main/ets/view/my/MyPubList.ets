@@ -1,3 +1,4 @@
+// entry/src/main/ets/view/my/MyPubList.ets
 import router from '@ohos.router'
 import prompt from '@ohos.prompt'
 import { rvp } from '../../common/utils/DeviceScreen'

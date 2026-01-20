@@ -1,7 +1,4 @@
-/**
- * @author yongoe
- * @since 2024/9/9
- */
+// entry/src/main/ets/view/roomDetail/RentPrice.ets
 import { rvp } from '../../common/utils/DeviceScreen'
 
 @Component

@@ -22,8 +22,14 @@ import { NavBar } from '../../view/roomDetail/NavBar'
 import { getUserHouses, UserHouse } from '../../store/UserHouseStore'
 import { PUBLIC_BASE_URL } from '../../common/utils/Request'
 
-// ✅ 新增：足迹写入
-import { addFootprintApi } from '../../api/footprint'
+// ✅ 足迹写入：现在需要 FootprintAuth
+import { addFootprintApi, FootprintAuth } from '../../api/footprint'
+
+interface UserInfo {
+  id?: number | string
+  userId?: string
+  phone?: string
+}
 
 @Entry
 @Component
@@ -88,33 +94,68 @@ struct RoomDetail {
 
   private toggleWantSee(): void {
     this.isWantSee = !this.isWantSee
-    promptAction.showToast({
-      message: this.isWantSee ? '已加入「想看」' : '已取消「想看」',
-      duration: 2000
-    })
+    try {
+      promptAction.showToast({
+        message: this.isWantSee ? '已加入「想看」' : '已取消「想看」',
+        duration: 2000
+      })
+    } catch {
+    }
   }
 
-  /** ✅ 新增：记录足迹（失败不影响详情页） */
-  private recordFootprint(houseId: string): void {
-    const userId: string = AppStorage.Has('userPhone') ? (AppStorage.Get('userPhone') as string) : ''
-    if (!userId || !houseId) return
+  // ✅ 从 AppStorage 取足迹鉴权信息：优先 user.id，其次兼容旧字段
+  private getFootprintAuth(): FootprintAuth {
+    let phone: string = ''
+    let userId: string = ''
 
-    addFootprintApi(userId, String(houseId)).catch(() => {
+    if (AppStorage.Has('user')) {
+      const u: UserInfo = AppStorage.Get('user') as UserInfo
+      if (u && u.phone && u.phone.length > 0) phone = String(u.phone)
+      if (u && u.id !== undefined && u.id !== null) userId = String(u.id)
+      if (!userId && u && u.userId && u.userId.length > 0) userId = u.userId
+    }
+
+    if (!phone && AppStorage.Has('userPhone')) phone = AppStorage.Get('userPhone') as string
+    if (!phone && AppStorage.Has('phone')) phone = AppStorage.Get('phone') as string
+    if (!userId && AppStorage.Has('userId')) userId = AppStorage.Get('userId') as string
+
+    const auth: FootprintAuth = {}
+    if (userId && userId.length > 0) auth.userId = userId
+    if (phone && phone.length > 0) auth.phone = phone
+    return auth
+  }
+
+  private hasFootprintAuth(auth: FootprintAuth): boolean {
+    return !!(auth.userId && auth.userId.length > 0) || !!(auth.phone && auth.phone.length > 0)
+  }
+
+  /** ✅ 记录足迹（失败不影响详情页） */
+  private recordFootprint(houseId: string): void {
+    if (!houseId) return
+    const auth: FootprintAuth = this.getFootprintAuth()
+    if (!this.hasFootprintAuth(auth)) return
+
+    addFootprintApi(auth, String(houseId)).catch(() => {
       // 静默失败即可
     })
   }
 
   aboutToAppear(): void {
-    const params = router.getParams() as Record<string, string>
-    const idFromRoute = params.id
-    this.houseId = idFromRoute
+    let idFromRoute: string = ''
+    try {
+      const params = router.getParams() as Record<string, string>
+      idFromRoute = params.id
+    } catch {
+      idFromRoute = ''
+    }
 
+    this.houseId = idFromRoute
     console.info('[RoomDetail] idFromRoute = ' + idFromRoute)
 
     const userList = getUserHouses()
     const found = userList.find(u => u.id.toString() === idFromRoute)
 
-    // ✅ 本地房源：拼好 detail 后记录足迹（用 idFromRoute 就行）
+    //本地房源：拼好 detail 后记录足迹（用 idFromRoute 就行）
     if (found) {
       this.isUserHouse = true
       this.userHouse = found
@@ -133,12 +174,11 @@ struct RoomDetail {
       this.housePictureList = localPics
       this.rentTerm = detail.rentTerm
 
-      // ✅ 记录足迹（本地）
       this.recordFootprint(String(idFromRoute))
       return
     }
 
-    // ✅ 远端房源：拿到详情后记录足迹（用 data.id 更准）
+    //远端房源：拿到详情后记录足迹（用 data.id 更准）
     getRoomDetailApi(idFromRoute).then((data: RoomDetailModel) => {
       console.info('[RoomDetail] detail = ' + JSON.stringify(data))
 
@@ -160,12 +200,10 @@ struct RoomDetail {
       this.housePictureList = mappedList
       this.rentTerm = data?.rentTerm ?? {} as RentTermItem
 
-      // ✅ 记录足迹（远端：以 data.id 为准）
-      if (this.houseId) {
-        this.recordFootprint(this.houseId)
-      } else {
-        this.recordFootprint(String(idFromRoute))
-      }
+      if (this.houseId) this.recordFootprint(this.houseId)
+      else this.recordFootprint(String(idFromRoute))
+    }).catch(() => {
+      // 静默即可
     })
   }
 

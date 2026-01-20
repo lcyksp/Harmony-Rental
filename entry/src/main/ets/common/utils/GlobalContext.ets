@@ -1,7 +1,6 @@
+//entry/src/main/ets/common/utils/GlobalContext.ets
 /**
  * 全局上下文工具类
- * @author yongoe
- * @since 2024/9/11
  */
 import { display, window } from '@kit.ArkUI';
 import { Want } from '@kit.AbilityKit';

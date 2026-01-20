@@ -12,7 +12,7 @@ export struct NavBar {
   topRectHeight: number = 0
   @Prop barData: BarData
 
-  // ✅ 跟首页一样，绑定全局“是否有未读消息”的布尔值
+  //跟首页一样，绑定全局“是否有未读消息”的布尔值
   @StorageLink('hasUnreadMessage')
   hasUnreadMessage: boolean = false
 
@@ -38,7 +38,7 @@ export struct NavBar {
             .height(rvp(20))
             .fillColor($r('app.color.black'))
 
-          // 🔴 小红点：只看 hasUnreadMessage
+          //小红点：只看 hasUnreadMessage
           if (this.hasUnreadMessage) {
             Column() { }
             .width(rvp(8))

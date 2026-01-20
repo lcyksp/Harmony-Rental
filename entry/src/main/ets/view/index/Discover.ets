@@ -1,7 +1,6 @@
+// entry/src/main/ets/view/index/Discover.ets
 /**
- * 发现页（已简化）
- * @author yong
- * @desc 社区相关功能暂未开放，仅展示信息页面
+ * 发现页（已简化），社区相关功能暂未开放，仅展示信息页面
  */
 
 @Component

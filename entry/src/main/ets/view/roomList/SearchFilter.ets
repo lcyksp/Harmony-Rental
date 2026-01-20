@@ -1,9 +1,8 @@
+//entry/src/main/ets/view/roomList/SearchFilter.ets
 /**
  * 房源推荐搜索框
- * @author yongoe
- * @since 2024/9/6
  */
-import { getAreaApi, getCityApi, getProvinceApi } from '../../api/room'
+import { getAreaApi, getCityApi, getProvinceApi, CityApiParam, AreaApiParam } from '../../api/room'
 import { rvp } from '../../common/utils/DeviceScreen'
 import {
   CityItem,
@@ -49,9 +48,20 @@ export struct SearchFilter {
     if (!this.provinceCode) {
       return
     }
-    getCityApi({ provinceCode: this.provinceCode }).then((data: CityItem[]) => {
+
+    //ArkTS：不要传对象字面量当类型，使用 class 参数
+    const p = new CityApiParam()
+    p.provinceCode = this.provinceCode
+
+    getCityApi(p).then((data: CityItem[]) => {
       this.cityList = data
-      this.cityCode = this.cityList[0].code
+
+      //避免空数组崩溃
+      this.cityCode = this.cityList.length > 0 ? this.cityList[0].code : ''
+
+      // 切省后，清空区列表（避免残留）
+      this.districtList = []
+      this.districtCode = ''
     })
   }
 
@@ -62,9 +72,15 @@ export struct SearchFilter {
     if (!this.cityCode) {
       return
     }
-    getAreaApi({ cityCode: this.cityCode }).then((data: DistrictItem[]) => {
+
+    const a = new AreaApiParam()
+    a.cityCode = this.cityCode
+
+    getAreaApi(a).then((data: DistrictItem[]) => {
       this.districtList = data
-      this.districtCode = this.districtList[0].code
+
+      //避免空数组崩溃
+      this.districtCode = this.districtList.length > 0 ? this.districtList[0].code : ''
     })
   }
 
@@ -98,33 +114,62 @@ export struct SearchFilter {
   submit() {
     this.openIndex = -1
     this.open = false
+
+    //SearchParams 必填字段全部补齐默认值（空字符串=不筛选）
     let searchParams: SearchParams = {
       page: 1,
       limit: 10,
-      provinceCode: this.provinceCode,
-      cityCode: this.cityCode,
-      districtCode: this.districtCode,
-      paymentType: this.payWay,
+      provinceCode: this.provinceCode ?? '',
+      cityCode: this.cityCode ?? '',
+      districtCode: this.districtCode ?? '',
+      paymentType: this.payWay ?? '',
+
+      // 必填：默认不筛选/默认排序
+      minRent: '',
+      maxRent: '',
+      orderBy: '',
+      orderType: ''
     }
+
     // 如果有值就传，再改标题，不限制租金，就不改标题
     if (this.price.id !== this.priceList[0].id) {
       searchParams.minRent = this.price.minRent
       searchParams.maxRent = this.price.maxRent
-      this.searchTextList[2] = this.priceList.filter((item) => item.id == this.price.id)[0].text
+      const matched = this.priceList.filter((item) => item.id == this.price.id)
+      if (matched.length > 0) {
+        this.searchTextList[2] = matched[0].text
+      }
+    } else {
+      // 还原标题
+      this.searchTextList[2] = this.defaultTextList[2]
     }
+
     // 排序不改标题
     if (this.sort.id !== this.sortList[0].id) {
       searchParams.orderBy = this.sort.orderBy
       searchParams.orderType = this.sort.orderType
-      // this.searchTextList[3] = this.sortList.filter((item) => item.id == this.sort.id)[0].text
+    } else {
+      // 默认排序
+      searchParams.orderBy = ''
+      searchParams.orderType = ''
     }
+
     //改变搜索标题
     if (this.districtCode) {
-      this.searchTextList[0] = this.districtList.filter((item) => item.code == this.districtCode)[0].name
+      const hit = this.districtList.filter((item) => item.code == this.districtCode)
+      if (hit.length > 0) {
+        this.searchTextList[0] = hit[0].name
+      }
+    } else {
+      this.searchTextList[0] = this.defaultTextList[0]
     }
+
     if (this.payWay) {
-      this.searchTextList[1] = this.payWayList.filter((item) => item == this.payWay)[0]
+      this.searchTextList[1] = this.payWay
+    } else {
+      this.searchTextList[1] = this.defaultTextList[1]
     }
+
     // 父子组件传参
     this.searchParams = searchParams
   }
@@ -187,7 +232,7 @@ export struct SearchFilter {
       Button({ type: ButtonType.Normal }) {
         Text('重置').fontColor(Color.Black)
       }
-      .onClick((event: ClickEvent) => {
+      .onClick((_event: ClickEvent) => {
         this.reset()
       })
       .borderRadius(rvp(4))
@@ -198,7 +243,7 @@ export struct SearchFilter {
       Button({ type: ButtonType.Normal }) {
         Text('查看房源').fontColor(Color.White)
       }
-      .onClick((event: ClickEvent) => {
+      .onClick((_event: ClickEvent) => {
         this.submit()
       })
       .fontSize(Color.White)
@@ -206,11 +251,9 @@ export struct SearchFilter {
       .borderRadius(rvp(4))
       .height('100%')
       .layoutWeight(1)
-
     }
     .height(rvp(26))
     .margin(rvp(16))
-
   }
 
   /**
@@ -432,4 +475,3 @@ export struct SearchFilter {
     }
   }
 }
-

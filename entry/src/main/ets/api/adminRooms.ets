@@ -1,5 +1,5 @@
 // entry/src/main/ets/api/adminRooms.ts
-import { http } from '../common/utils/Request' // 路径按你项目实际：报错就改成 ../../common/utils/Request
+import { http } from '../common/utils/Request'
 
 export interface AdminRoomListItem {
   id: string
@@ -39,7 +39,7 @@ function buildRoomsListParams(keyword: string, status: string): RoomsListParams 
   return p
 }
 
-// ===== 对外 API（保留你原来签名：token 仍然传进来，但不再使用）=====
+// ===== 对外 API =====
 
 // 管理员：房源搜索列表（GET /rooms/admin/list）
 export async function adminListRoomsApi(keyword: string, status: string, _token: string): Promise<AdminRoomListData> {

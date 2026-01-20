@@ -1,7 +1,6 @@
+// entry/src/main/ets/component/SwiperVertical.ets
 /**
  * 区域导览
- * @author yongoe
- * @since 2024/9/3
  */
 
 @Component

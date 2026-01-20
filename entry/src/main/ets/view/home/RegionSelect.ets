@@ -1,3 +1,4 @@
+// entry/src/main/ets/view/home/RegionSelect.ets
 import { router } from '@kit.ArkUI'
 import promptAction from '@ohos.promptAction'
 import http from '@ohos.net.http'
@@ -34,8 +35,6 @@ export struct RegionSelect {
     this.fetchCities('')
   }
 
-  // ✅ 关键：PUBLIC_BASE_URL 往往是 .../public/（给图片用）
-  // 我们把末尾 /public 或 /public/ 去掉，作为接口 base
   private getApiBaseUrl(): string {
     const base: string = (PUBLIC_BASE_URL || '').replace(/\/+$/, '')
     // 去掉结尾的 /public
@@ -69,7 +68,6 @@ export struct RegionSelect {
       kw ? `/region/cities?keyword=${kw}&limit=50` : '/region/cities?limit=50'
     )
 
-    // ✅ 日志 1：确认 base/url
     console.info(`[RegionSelect] PUBLIC_BASE_URL=${PUBLIC_BASE_URL}`)
     console.info(`[RegionSelect] API_BASE=${this.getApiBaseUrl()}`)
     console.info(`[RegionSelect] Request URL=${url}`)
@@ -80,14 +78,12 @@ export struct RegionSelect {
         header: { 'Content-Type': 'application/json' }
       })
 
-      // ✅ 日志 2：HTTP 状态码
       console.info(`[RegionSelect] HTTP responseCode=${resp.responseCode}`)
 
       let raw: string = ''
       if (typeof resp.result === 'string') raw = resp.result
       else raw = JSON.stringify(resp.result)
 
-      // ✅ 日志 3：返回 body（截断）
       const preview: string = raw.length > 200 ? raw.slice(0, 200) + '...' : raw
       console.info(`[RegionSelect] Body preview=${preview}`)
 
@@ -128,7 +124,6 @@ export struct RegionSelect {
   }
 
   private chooseCity(item: CityOption): void {
-    // ✅ 和数据库一致：cityCode=1101 provinceCode=11（原样存）
     AppStorage.setOrCreate('currentCityName', item.name)
     AppStorage.setOrCreate('currentProvinceCode', item.provinceCode)
     AppStorage.setOrCreate('currentCityCode', item.cityCode)
@@ -181,7 +176,7 @@ export struct RegionSelect {
     }
     .width('100%')
     .height('100%')
-    .padding({ top: this.topRectHeight }) // ✅ 状态栏不再遮挡
+    .padding({ top: this.topRectHeight })
     .backgroundColor('#F5F6F7')
   }
 }

@@ -1,3 +1,4 @@
+// entry/src/main/ets/view/index/My.ets
 /**
  * 我的
  */
@@ -10,7 +11,6 @@ import { PlanList } from '../my/PlanList'
 import { TimePlan } from '../my/TimePlan'
 import { UserInfo } from '../my/UserInfo'
 import { MyRoomCarousel } from '../my/MyRoomCarousel'
-
 
 @Preview
 @Component

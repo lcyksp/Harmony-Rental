@@ -1,3 +1,4 @@
+// entry/src/main/ets/view/my/UserInfo.ets
 /**
  * 用户头像
  */
@@ -51,10 +52,6 @@ export struct UserInfo {
 
   build() {
     Row({ space: rvp(10) }) {
-
-      // ★★★★★ 关键修复：UI 内不能直接访问 user.nickname，因为 user 可能为 null
-      // 所以必须完整写成 this.user?.nickname
-
       if (this.user?.nickname) {
         // ========= 已登录 =========
         Avatar({ src: this.avatarSrc, avatarSize: rvp(60) })

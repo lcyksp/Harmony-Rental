@@ -1,7 +1,4 @@
-/**
- * @author yongoe
- * @since 2024/9/8
- */
+// entry/src/main/ets/view/discover/Bg.ets
 import { rvp } from '../../common/utils/DeviceScreen'
 
 @Component
