@@ -31,8 +31,9 @@ router.get('/provinces', async (req, res) => {
     while (stmt.step()) {
       const row = stmt.getAsObject()
       list.push({
-        code: String(row.code),
-        name: row.name
+        name: row.name,
+        cityCode: String(row.code),
+        provinceCode: String(row.province_code)
       })
     }
     stmt.free()
@@ -58,33 +59,63 @@ router.get('/cities', async (req, res) => {
   try {
     const provinceCode = (req.query.provinceCode || '').toString().trim()
     const keyword = (req.query.keyword || '').toString().trim()
+    const limit = Math.max(parseInt(String(req.query.limit || '50'), 10) || 50, 1)
+
     const db = await getDB()
 
     let stmt
     if (provinceCode) {
+      //只取“市级”（4位码）；直辖市会把“市辖区”转成“北京市/天津市…”
       stmt = db.prepare(`
-        SELECT code, name, province_code
-        FROM city
-        WHERE province_code = ?
-        ORDER BY code ASC
+        SELECT
+          c.code AS code,
+          CASE
+            WHEN c.name = '市辖区' AND p.name IS NOT NULL THEN p.name
+            ELSE c.name
+          END AS name,
+          c.province_code AS province_code
+        FROM city c
+        LEFT JOIN province p ON p.code = c.province_code
+        WHERE c.province_code = ?
+          AND LENGTH(CAST(c.code AS TEXT)) = 4
+        ORDER BY CAST(c.code AS INTEGER) ASC
       `)
       stmt.bind([provinceCode])
     } else if (keyword) {
+      //keyword 同时查 city.name 和 province.name；依然只取 4 位码
       stmt = db.prepare(`
-        SELECT code, name, province_code
-        FROM city
-        WHERE name LIKE ?
-        ORDER BY code ASC
-        LIMIT 50
+        SELECT
+          c.code AS code,
+          CASE
+            WHEN c.name = '市辖区' AND p.name IS NOT NULL THEN p.name
+            ELSE c.name
+          END AS name,
+          c.province_code AS province_code
+        FROM city c
+        LEFT JOIN province p ON p.code = c.province_code
+        WHERE LENGTH(CAST(c.code AS TEXT)) = 4
+          AND (c.name LIKE ? OR p.name LIKE ?)
+        ORDER BY CAST(c.code AS INTEGER) ASC
+        LIMIT ?
       `)
-      stmt.bind([`%${keyword}%`])
+      stmt.bind([`%${keyword}%`, `%${keyword}%`, limit])
     } else {
+      //默认列表：只给 4 位码城市；直辖市名称转换
       stmt = db.prepare(`
-        SELECT code, name, province_code
-        FROM city
-        ORDER BY code ASC
-        LIMIT 50
+        SELECT
+          c.code AS code,
+          CASE
+            WHEN c.name = '市辖区' AND p.name IS NOT NULL THEN p.name
+            ELSE c.name
+          END AS name,
+          c.province_code AS province_code
+        FROM city c
+        LEFT JOIN province p ON p.code = c.province_code
+        WHERE LENGTH(CAST(c.code AS TEXT)) = 4
+        ORDER BY CAST(c.code AS INTEGER) ASC
+        LIMIT ?
       `)
+      stmt.bind([limit])
     }
 
     const list = []
@@ -92,7 +123,7 @@ router.get('/cities', async (req, res) => {
       const row = stmt.getAsObject()
       list.push({
         code: String(row.code),
-        name: row.name,
+        name: String(row.name),
         provinceCode: String(row.province_code)
       })
     }

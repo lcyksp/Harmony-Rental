@@ -213,19 +213,52 @@ function mapRowToItem(req, row) {
 
 /**
  * 房源列表：GET /rooms
- * 支持 keyword 关键词搜索（标题 / 地址 / 区域 等）
+ * 支持：
+ * - keyword
+ * - provinceCode / cityCode / districtCode（驼峰）
+ * - province_code / city_code / area_code（下划线）
  * 只返回 online
  */
 router.get('/', async (req, res) => {
   try {
     const db = await getDB();
+
     const rawKeyword = req.query.keyword;
     const keyword = typeof rawKeyword === 'string' ? rawKeyword.trim() : '';
-
-    const list = [];
-    const stmt = db.prepare('SELECT id, data FROM house_info');
     const kwLower = keyword ? keyword.toLowerCase() : '';
 
+    //兼容驼峰 + 下划线
+    const pCode = String(req.query.provinceCode ?? req.query.province_code ?? '').trim();
+    const cCode = String(req.query.cityCode ?? req.query.city_code ?? '').trim();
+    // 你前端叫 districtCode，但你库里字段叫 area_code
+    const aCode = String(
+      req.query.districtCode ?? req.query.areaCode ?? req.query.district_code ?? req.query.area_code ?? ''
+    ).trim();
+
+    //分页（可选，但你前端传了 page/limit）
+    const page = Math.max(parseInt(String(req.query.page ?? '1'), 10) || 1, 1);
+    const limit = Math.max(parseInt(String(req.query.limit ?? '10'), 10) || 10, 1);
+    const offset = (page - 1) * limit;
+
+    //组装 SQL：区 > 市 > 省
+    const where = [];
+    const binds = [];
+
+    if (aCode) { where.push('area_code = ?'); binds.push(aCode); }
+    else if (cCode) { where.push('city_code = ?'); binds.push(cCode); }
+    else if (pCode) { where.push('province_code = ?'); binds.push(pCode); }
+
+    // 先只取 online（这里因为 status 在 data JSON 里，所以还是需要扫出来判断）
+    // 但是地区过滤我们可以走 SQL，减少扫描量
+    const sql = `
+      SELECT id, data, province_code, city_code, area_code
+      FROM house_info
+      ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
+    `;
+    const stmt = db.prepare(sql);
+    if (binds.length) stmt.bind(binds);
+
+    const list = [];
     while (stmt.step()) {
       const row = stmt.getAsObject();
       const { item, detail } = mapRowToItem(req, row);
@@ -245,12 +278,20 @@ router.get('/', async (req, res) => {
         if (!haystack.includes(kwLower)) continue;
       }
 
+      //把地区字段也带回前端（可用于前端兜底过滤/调试）
+      item.provinceCode = String(row.province_code ?? '');
+      item.cityCode = String(row.city_code ?? '');
+      item.districtCode = String(row.area_code ?? '');
+
       list.push(item);
     }
-
     stmt.free();
 
-    res.json({ code: 200, data: { list, total: list.length }, message: 'success' });
+    //手动分页（因为 status/keyword 在 JSON 里过滤）
+    const total = list.length;
+    const paged = list.slice(offset, offset + limit);
+
+    res.json({ code: 200, data: { list: paged, total }, message: 'success' });
   } catch (err) {
     console.error('GET /rooms error:', err);
     res.status(500).json({ code: 500, data: null, message: '内部错误' });

@@ -1,6 +1,6 @@
 // entry/src/main/ets/view/home/RoomRecommend.ets
 /**
- * 首页 - 房源推荐组件（按当前区域筛选 + 空态）
+ * 首页 - 房源推荐组件（按当前“市”优先 + 空态）
  */
 import { router } from '@kit.ArkUI'
 import { rvp } from '../../common/utils/DeviceScreen'
@@ -11,17 +11,25 @@ import { RoomRecommendItem, TagItem } from '../../viewmodel/HomeModel'
 import { getRoomListApi } from '../../api/room'
 import type { RoomListModel, RoomItem, SearchParams } from '../../viewmodel/RoomListModel'
 
-// 本地类型：和后端 housePicture 结构对应
+// 与后端 housePicture 结构对应
 interface HousePictureDTO {
   spaceName?: string
   picList?: string[]
 }
 
-//ArkTS：用继承代替交叉类型
-interface RoomItemWithRegion extends RoomItem {
-  provinceCode?: string
+/**
+ * 后端房源 item 可能包含城市字段（两种命名方式）
+ */
+interface RoomItemWithCity extends RoomItem {
   cityCode?: string
-  districtCode?: string
+  city_code?: string
+}
+
+/**
+ * 兼容 SearchParams + 额外传 snake 字段
+ */
+interface RoomListQueryParams extends SearchParams {
+  city_code: string
 }
 
 @Component
@@ -29,32 +37,22 @@ export struct RoomRecommend {
   @State roomRecommendDataSource: RoomRecommendDataSource = new RoomRecommendDataSource()
   @State isEmpty: boolean = false
 
-  //任意区域变化都刷新（防抖）
-  @StorageLink('currentProvinceCode')
-  @Watch('onRegionChanged')
-  currentProvinceCode: string = ''
-
   @StorageLink('currentCityCode')
-  @Watch('onRegionChanged')
+  @Watch('onCityChanged')
   currentCityCode: string = ''
 
-  @StorageLink('currentDistrictCode')
-  @Watch('onRegionChanged')
-  currentDistrictCode: string = ''
-
-  //外部触发刷新信号
   @StorageLink('needReloadHomeRooms')
   @Watch('onNeedReloadChanged')
   needReloadHomeRooms: boolean = false
 
-  private regionTimerId: number = 0
+  private cityTimerId: number = 0
 
-  private onRegionChanged(): void {
-    if (this.regionTimerId) {
-      clearTimeout(this.regionTimerId)
-      this.regionTimerId = 0
+  private onCityChanged(): void {
+    if (this.cityTimerId) {
+      clearTimeout(this.cityTimerId)
+      this.cityTimerId = 0
     }
-    this.regionTimerId = setTimeout(() => {
+    this.cityTimerId = setTimeout(() => {
       this.loadRecommend()
     }, 120)
   }
@@ -67,16 +65,52 @@ export struct RoomRecommend {
   }
 
   aboutToAppear(): void {
-    this.loadRecommend()
+    // 触发一次，避免被检查器认为“未使用”
+    this.onNeedReloadChanged()
+    this.onCityChanged()
+  }
+
+  private getCityCode(it: RoomItemWithCity): string {
+    if (it.cityCode !== undefined && it.cityCode !== null) return String(it.cityCode)
+    if (it.city_code !== undefined && it.city_code !== null) return String(it.city_code)
+    return ''
+  }
+
+  private preferLocalCity(list: RoomItemWithCity[], cityCode: string): RoomItemWithCity[] {
+    const c: string = (cityCode || '').trim()
+    if (!c || list.length === 0) return list
+
+    const first: RoomItemWithCity = list[0]
+    const hasCityField: boolean = first.cityCode !== undefined || first.city_code !== undefined
+    if (!hasCityField) return list
+
+    const local: RoomItemWithCity[] = []
+    const other: RoomItemWithCity[] = []
+
+    for (let i = 0; i < list.length; i++) {
+      const it: RoomItemWithCity = list[i]
+      const itC: string = this.getCityCode(it)
+      if (itC && itC === c) local.push(it)
+      else other.push(it)
+    }
+    return local.concat(other)
   }
 
   private loadRecommend(): void {
-    const params: SearchParams = {
+    const c: string = (this.currentCityCode || '').trim()
+
+    const params: RoomListQueryParams = {
       page: 1,
       limit: 10,
-      provinceCode: this.currentProvinceCode || '',
-      cityCode: this.currentCityCode || '',
-      districtCode: this.currentDistrictCode || '',
+
+      // SearchParams 常见必填字段：补齐（即使不用也给空串）
+      provinceCode: '',
+      cityCode: c,
+      districtCode: '',
+
+      // 兼容后端 snake
+      city_code: c,
+
       minRent: '',
       maxRent: '',
       paymentType: '',
@@ -86,58 +120,30 @@ export struct RoomRecommend {
 
     getRoomListApi(params)
       .then((res: RoomListModel) => {
-        const finalList: RoomRecommendItem[] = []
+        let serverList: RoomItemWithCity[] = []
 
-        // 兼容 list / records
-        let serverList: RoomItemWithRegion[] = []
         if (res.list && res.list.length > 0) {
-          serverList = res.list as RoomItemWithRegion[]
-        } else if (res.records && res.records.length > 0) {
-          serverList = res.records as RoomItemWithRegion[]
+          serverList = res.list as RoomItemWithCity[]
+        } else if ((res as RoomListModel).records && (res as RoomListModel).records!.length > 0) {
+          serverList = (res as RoomListModel).records as RoomItemWithCity[]
         }
 
-        //前端兜底过滤：仅当后端返回里确实有这些字段时才过滤
-        const pCode: string = this.currentProvinceCode || ''
-        const cCode: string = this.currentCityCode || ''
-        const dCode: string = this.currentDistrictCode || ''
-
-        if (serverList.length > 0 && (pCode || cCode || dCode)) {
-          const first: RoomItemWithRegion = serverList[0]
-          const hasRegionField: boolean =
-            (first.provinceCode !== undefined) || (first.cityCode !== undefined) || (first.districtCode !== undefined)
-
-          if (hasRegionField) {
-            serverList = serverList.filter((it: RoomItemWithRegion) => {
-              const itP: string = String(it.provinceCode ?? '')
-              const itC: string = String(it.cityCode ?? '')
-              const itD: string = String(it.districtCode ?? '')
-
-              // 区 > 市 > 省
-              if (dCode) return itD === dCode
-              if (cCode) return itC === cCode
-              if (pCode) return itP === pCode
-              return true
-            })
-          }
-        }
-
-        //空态
         if (serverList.length === 0) {
           this.isEmpty = true
           this.roomRecommendDataSource.setList([])
           return
         }
 
-        this.isEmpty = false
+        serverList = this.preferLocalCity(serverList, c)
 
+        const finalList: RoomRecommendItem[] = []
         const maxServer: number = 10
-        for (let j = 0; j < serverList.length && j < maxServer; j++) {
-          const item: RoomItemWithRegion = serverList[j]
 
-          // ===== 封面图统一取 string URL =====
+        for (let j = 0; j < serverList.length && j < maxServer; j++) {
+          const item: RoomItemWithCity = serverList[j]
+
           let cover: string = ''
 
-          //housePicture 是数组：取第一张
           if (Array.isArray(item.housePicture)) {
             const hpList: HousePictureDTO[] = item.housePicture as HousePictureDTO[]
             if (hpList.length > 0) {
@@ -155,7 +161,6 @@ export struct RoomRecommend {
             }
           }
 
-          //housePicture 是字符串（兼容旧格式）
           if (!cover && typeof item.housePicture === 'string') {
             let raw: string = (item.housePicture as string).trim()
             if (raw.startsWith('http://') || raw.startsWith('https://')) {
@@ -166,7 +171,6 @@ export struct RoomRecommend {
             }
           }
 
-          //兜底字段
           if (!cover && item.imageUrl) cover = item.imageUrl
           if (!cover && item.coverUrl) cover = item.coverUrl
 
@@ -184,21 +188,23 @@ export struct RoomRecommend {
           finalList.push(rec)
         }
 
+        this.isEmpty = finalList.length === 0
         this.roomRecommendDataSource.setList(finalList)
       })
       .catch((err: Error) => {
-        console.error('getRoomListApi error: ', JSON.stringify(err))
+        console.error('[RoomRecommend] getRoomListApi error: ', err.message)
         this.isEmpty = true
         this.roomRecommendDataSource.setList([])
       })
   }
 
-  // 头部导航
+  // ================= UI =================
+
   @Builder
   RoomNav() {
     Row() {
       Text() {
-        Span('周边房源').fontWeight(700)
+        Span('同城房源').fontWeight(700)
         Span('推荐').fontColor($r('app.color.primary'))
       }.fontSize(rvp(18))
 
@@ -211,7 +217,12 @@ export struct RoomRecommend {
           .height(rvp(8))
       }
       .onClick(() => {
-        router.pushUrl({ url: 'pages/rentRoom/RoomList' })
+        try {
+          router.pushUrl({ url: 'pages/rentRoom/RoomList' })
+        } catch (e) {
+          const msg: string = (e instanceof Error) ? e.message : String(e)
+          console.error('[RoomRecommend] router.pushUrl error:', msg)
+        }
       })
     }
     .width('100%')
@@ -222,7 +233,7 @@ export struct RoomRecommend {
   @Builder
   EmptyView() {
     Column() {
-      Text('当前地区暂无房源')
+      Text('当前城市暂无房源')
         .fontSize(rvp(14))
         .fontColor($r('app.color.text_gray'))
         .margin({ top: rvp(12), bottom: rvp(12) })
@@ -310,10 +321,15 @@ export struct RoomRecommend {
     .height('100%')
     .alignContent(Alignment.TopStart)
     .onClick(() => {
-      router.pushUrl({
-        url: 'pages/rentRoom/RoomDetail',
-        params: { id: room.id }
-      })
+      try {
+        router.pushUrl({
+          url: 'pages/rentRoom/RoomDetail',
+          params: { id: room.id }
+        })
+      } catch (e) {
+        const msg: string = (e instanceof Error) ? e.message : String(e)
+        console.error('[RoomRecommend] router.pushUrl detail error:', msg)
+      }
     })
   }
 

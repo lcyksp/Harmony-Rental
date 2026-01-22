@@ -93,7 +93,7 @@ export struct SearchBar {
     } catch (e) {
       await this.showGoSelectDialog(
         '定位不可用',
-        '模拟器可能无法开启定位权限/定位服务，建议手动选择目标地区（例如去北京前先看看房源）。'
+        '可能无法开启定位权限/定位服务，请先打开后使用。如无法使用请手动设置位置。'
       )
     }
   }

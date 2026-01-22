@@ -6,7 +6,9 @@ import { PUBLIC_BASE_URL } from '../../common/utils/Request'
 
 interface CityOption {
   name: string
-  cityCode: string
+  //兼容：后端可能返回 code 或 cityCode
+  code?: string
+  cityCode?: string
   provinceCode: string
 }
 
@@ -59,6 +61,11 @@ export struct RegionSelect {
     }
   }
 
+  //统一取城市 code（兼容两种字段）
+  private pickCityCode(item: CityOption): string {
+    return (item.code ?? item.cityCode ?? '').toString()
+  }
+
   private async fetchCities(keyword: string): Promise<void> {
     this.loading = true
     const client: http.HttpRequest = http.createHttp()
@@ -68,26 +75,17 @@ export struct RegionSelect {
       kw ? `/region/cities?keyword=${kw}&limit=50` : '/region/cities?limit=50'
     )
 
-    console.info(`[RegionSelect] PUBLIC_BASE_URL=${PUBLIC_BASE_URL}`)
-    console.info(`[RegionSelect] API_BASE=${this.getApiBaseUrl()}`)
-    console.info(`[RegionSelect] Request URL=${url}`)
-
     try {
       const resp: http.HttpResponse = await client.request(url, {
         method: http.RequestMethod.GET,
         header: { 'Content-Type': 'application/json' }
       })
 
-      console.info(`[RegionSelect] HTTP responseCode=${resp.responseCode}`)
-
       let raw: string = ''
       if (typeof resp.result === 'string') raw = resp.result
       else raw = JSON.stringify(resp.result)
 
-      const preview: string = raw.length > 200 ? raw.slice(0, 200) + '...' : raw
-      console.info(`[RegionSelect] Body preview=${preview}`)
-
-      // 如果是 404/500，直接提示更明确
+      // HTTP 非 200
       if (resp.responseCode !== 200) {
         this.list = []
         promptAction.showToast({ message: `请求失败：HTTP ${resp.responseCode}` })
@@ -96,7 +94,9 @@ export struct RegionSelect {
 
       const parsed: CityListResp | null = this.safeParseCityResp(raw)
       if (parsed && parsed.code === 200) {
-        this.list = parsed.data.list
+        // ✅ 用新数组触发 @State 刷新
+        this.list = [...parsed.data.list]
+        console.info(`[RegionSelect] parsed list length=${this.list.length}`)
       } else {
         this.list = []
         promptAction.showToast({ message: '城市数据加载失败（返回结构/业务码不对）' })
@@ -124,9 +124,15 @@ export struct RegionSelect {
   }
 
   private chooseCity(item: CityOption): void {
+    const cityCode: string = this.pickCityCode(item)
+    if (!cityCode) {
+      promptAction.showToast({ message: '城市编码为空：请检查后端返回字段（code/cityCode）' })
+      return
+    }
+
     AppStorage.setOrCreate('currentCityName', item.name)
     AppStorage.setOrCreate('currentProvinceCode', item.provinceCode)
-    AppStorage.setOrCreate('currentCityCode', item.cityCode)
+    AppStorage.setOrCreate('currentCityCode', cityCode)
     AppStorage.setOrCreate('currentDistrictCode', '')
     AppStorage.setOrCreate('needReloadHomeRooms', true)
 
@@ -169,7 +175,7 @@ export struct RegionSelect {
             .height(52)
             .padding({ left: 16, right: 16 })
           }.onClick(() => this.chooseCity(item))
-        }, (item: CityOption) => item.cityCode)
+        }, (item: CityOption) => this.pickCityCode(item)) //key 改成兼容 code/cityCode
       }
       .width('100%')
       .layoutWeight(1)

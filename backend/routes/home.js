@@ -8,7 +8,7 @@ router.get('/info', (req, res) => {
   const HOST = getHost(req);
 
   // 顶部轮播图：这里仍然用后端图片
-  const bannerFiles = ['room6.jpg', 'room37.jpg', 'room65.jpg'];
+  const bannerFiles = ['home_banner_1.jpg', 'home_banner_2.jpg', 'room80.jpg'];
   const banners = bannerFiles.map((file, idx) => {
     const full = `${HOST}/public/${file}`;
     return {

@@ -134,7 +134,7 @@ struct Footprint {
     return this.safeStr(item.snapshot?.address, '')
   }
 
-  //router 可能 throw：包 try/catch 解决 ArkTSCheck
+  //router 可能 throw：包 try/catch
   private onClickItem(item: FootprintItem): void {
     const id: string = this.safeStr(item.houseId, '')
     if (!id) return
@@ -200,6 +200,7 @@ struct Footprint {
   private FootprintListItem(item: FootprintItem) {
     ListItem() {
       Row() {
+        // 左侧封面固定宽高
         if (this.hasText(this.getCover(item))) {
           Image(this.getCover(item))
             .width(rvp(80))
@@ -215,8 +216,10 @@ struct Footprint {
           .justifyContent(FlexAlign.Center)
         }
 
+        // 中间信息：占用剩余空间，允许被压缩（关键）
         Column({ space: rvp(6) }) {
           Text(this.getTitle(item))
+            .width('100%')
             .fontSize(rvp(14))
             .fontWeight(FontWeight.Medium)
             .maxLines(1)
@@ -224,12 +227,16 @@ struct Footprint {
 
           if (this.hasText(this.getPrice(item))) {
             Text(this.getPrice(item))
+              .width('100%')
               .fontSize(rvp(13))
               .fontColor('#FF6A00')
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
           }
 
           if (this.hasText(this.getAddress(item))) {
             Text(this.getAddress(item))
+              .width('100%')
               .fontSize(rvp(12))
               .fontColor('#999999')
               .maxLines(1)
@@ -238,14 +245,18 @@ struct Footprint {
 
           if (item.viewedAt) {
             Text(`浏览时间：${this.formatTime(item.viewedAt)}`)
+              .width('100%')
               .fontSize(rvp(11))
               .fontColor('#BBBBBB')
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
           }
         }
         .margin({ left: rvp(12) })
+        .layoutWeight(1)
+        .constraintSize({ minWidth: 0 }) // ✅ 防止标题撑开把右侧挤没
 
-        Blank().layoutWeight(1)
-
+        // 右侧操作：固定宽度，永远可见
         Column({ space: rvp(8) }) {
           Text('>')
             .fontSize(rvp(12))
@@ -256,8 +267,11 @@ struct Footprint {
             .fontColor('#FF4B4B')
             .onClick(() => this.onRemove(item))
         }
+        .width(rvp(56))
+        .alignItems(HorizontalAlign.End)
       }
       .padding({ left: rvp(16), right: rvp(16), top: rvp(10), bottom: rvp(10) })
+      .alignItems(VerticalAlign.Center)
       .onClick(() => this.onClickItem(item))
     }
   }
@@ -295,7 +309,6 @@ struct Footprint {
       } else if (!this.list || this.list.length === 0) {
         this.EmptyView()
       } else {
-        //ArkTSCheck: List 建议设置 width/height
         Column() {
           List() {
             ForEach(
