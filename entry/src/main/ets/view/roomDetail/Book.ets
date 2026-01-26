@@ -330,7 +330,7 @@ export struct Book {
       }
 
       // “立即预定”按钮（原逻辑，带已租状态）
-      Button(this.isRented ? '已租出' : '立即预定', { type: ButtonType.Normal })
+      Button(this.isRented ? '已租出' : '预约看房', { type: ButtonType.Normal })
         .borderRadius(rvp(2))
         .backgroundColor(this.isRented ? '#cccccc' : '#24A17B')
         .padding({ left: rvp(30), right: rvp(30) })

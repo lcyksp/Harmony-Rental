@@ -7,7 +7,7 @@ export interface AnyObject {
 }
 
 const instance = axios.create({
-  baseURL: 'http://192.168.1.102:7000',
+  baseURL: 'http://192.168.3.2:7000',
   timeout: 10000,
   validateStatus: () => true,
 })

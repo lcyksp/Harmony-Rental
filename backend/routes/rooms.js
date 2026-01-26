@@ -1,8 +1,102 @@
 // backend/routes/rooms.js
 import express from 'express';
 import { getDB } from '../db.js';
+import { pinyin } from 'pinyin-pro';
+import crypto from 'crypto';
 
 const router = express.Router();
+const MAX_HOUSE_ID_LEN = 24   // 你想要的总长度（可调）
+const MIN_RAND_LEN = 6        // 随机后缀最少位数（可调）
+
+function pad2(n) {
+  return n < 10 ? `0${n}` : String(n)
+}
+
+function ymd8(d) {
+  return `${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}`
+}
+
+function ymdhms14(d) {
+  return `${ymd8(d)}${pad2(d.getHours())}${pad2(d.getMinutes())}${pad2(d.getSeconds())}`
+}
+
+// 城市名 -> 2位拼音首字母（北京->BJ，东莞->DG，广州->GZ）
+function cityAbbr(cityName) {
+  const name = String(cityName || '').trim()
+    .replace(/[市县区盟州地区]$/g, '') // 简单去后缀（可按需再增强）
+
+  if (!name) return 'CS'
+
+  const first = pinyin(name, { pattern: 'first', toneType: 'none' })
+    .replace(/\s+/g, '')
+    .toUpperCase()
+
+  return (first + 'XX').slice(0, 2)
+}
+
+function randomDigits(len) {
+  let s = ''
+  for (let i = 0; i < len; i++) s += String(crypto.randomInt(0, 10))
+  return s
+}
+
+// 从 payload 尽量推一个 cityName：优先 city_name/cityName，其次从 address “城市·详细地址” 里切
+function extractCityName(payload) {
+  const direct = payload.city_name || payload.cityName || payload.city || ''
+  if (direct && String(direct).trim()) return String(direct).trim()
+
+  const addr = payload.address || ''
+  const a = String(addr).trim()
+  if (!a) return ''
+
+  const parts = a.split('·') // 你前端就是 “城市名·详细地址”
+  if (parts.length >= 1 && parts[0].trim()) return parts[0].trim()
+  return ''
+}
+
+// 生成：AB + YYYYMMDDHHmmss + rand；不够就 AB + YYYYMMDD + rand
+function makeHouseId(cityName, maxLen = MAX_HOUSE_ID_LEN, minRand = MIN_RAND_LEN) {
+  const prefix = cityAbbr(cityName)
+  const now = new Date()
+
+  const dt14 = ymdhms14(now)   // 14位
+  const d8 = ymd8(now)         // 8位
+
+  // 方案1：带时间
+  let base = prefix + dt14
+  let remain = maxLen - base.length
+
+  // 长度不够，降级为只年月日
+  if (remain < minRand) {
+    base = prefix + d8
+    remain = maxLen - base.length
+  }
+
+  // 随机后缀：尽量 >= minRand；实在不够至少给2位
+  let randLen = remain >= minRand ? Math.min(8, remain) : Math.max(2, remain)
+  if (randLen <= 0) randLen = 2
+
+  // 兜底：如果 base 过长，截断 base 给随机留空间
+  if (base.length + randLen > maxLen) {
+    base = base.slice(0, Math.max(0, maxLen - randLen))
+  }
+
+  return base + randomDigits(randLen)
+}
+
+// 极低概率撞车时：重试几次确保唯一
+function genUniqueHouseId(db, cityName) {
+  for (let i = 0; i < 5; i++) {
+    const id = makeHouseId(cityName)
+    const stmt = db.prepare('SELECT 1 FROM house_info WHERE id = ? LIMIT 1')
+    stmt.bind([id])
+    const exists = stmt.step()
+    stmt.free()
+    if (!exists) return id
+  }
+  // 兜底：再加长随机（不依赖长度规则的话也行）
+  return makeHouseId(cityName, MAX_HOUSE_ID_LEN, 2)
+}
 
 /**
  * 确保订单表存在（为了后面 /rooms/:id/orders 不报错）
@@ -392,8 +486,9 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ code: 400, data: null, message: 'houseTitle 不能为空' });
     }
 
-    const clientId = payload.id && String(payload.id).trim();
-    const newId = clientId || ('U' + Date.now());
+    //后端生成ID：城市首字母 + 日期(14位/8位自动降级) + 随机
+    const cityName = extractCityName(payload)   // 前端 address 是 “城市·详细地址”，这里能切出来
+    const newId = genUniqueHouseId(db, cityName) // 查库防撞
 
     const ownerId = payload.ownerId || payload.phone || null;
     const status = payload.status || 'online';
@@ -401,6 +496,7 @@ router.post('/', async (req, res) => {
 
     const merged = { ...payload, id: newId, ownerId, landlordPhone, status };
     const dataStr = JSON.stringify(merged);
+
 
     db.run(
       `INSERT INTO house_info (

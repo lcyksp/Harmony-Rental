@@ -54,7 +54,7 @@ struct PublishHousePage {
   @State rentType: string = '整租'
   @State community: string = ''   // 小区名
 
-  // ✅ 改造：只精确到市（城市由“搜索选择”产生）
+  //改造：只精确到市（城市由“搜索选择”产生）
   @State cityName: string = ''    // 城市显示名
   @State address: string = ''     // 详细地址（可为空）
 
@@ -316,7 +316,7 @@ struct PublishHousePage {
             TextInput({ placeholder: '小区名称，例如：黄花亭新村' })
               .onChange((v: string) => this.community = v)
 
-            // ✅ 城市（点击打开搜索选择）
+            //城市（点击打开搜索选择）
             Row() {
               Text(this.cityName ? this.cityName : '选择城市（点击搜索）')
                 .fontSize(14)
@@ -453,7 +453,7 @@ struct PublishHousePage {
       return
     }
 
-    // ✅ 只精确到市：必须选城市
+    //只精确到市：必须选城市
     if (!this.cityCode || this.cityCode.trim().length === 0) {
       promptAction.showToast({ message: '请选择城市' })
       return
@@ -482,7 +482,7 @@ struct PublishHousePage {
 
     const finalTitle: string = this.title || autoTitle
 
-    // ✅ 地址组合：城市 + 详细地址（如果用户不填详细地址，也至少能看到城市）
+    //地址组合：城市 + 详细地址（如果用户不填详细地址，也至少能看到城市）
     const addrCore: string = (this.address || '').trim()
     const finalAddress: string = addrCore
       ? `${this.cityName || ''}·${addrCore}`.replace(/^·/, '')
@@ -575,7 +575,7 @@ struct PublishHousePage {
 
     detailJson.metaInfo = metaList
 
-    // ✅ 只精确到市：区县字段先置空（兼容旧后端字段）
+    //只精确到市：区县字段先置空（兼容旧后端字段）
     detailJson.hdic_district_name = ''
     detailJson.rent_area = this.area
     detailJson.payment = this.payment || ''
